@@ -7,19 +7,36 @@ library(alphavantager)
 getStock <- function(name){
   stock <-
     getSymbols(name, auto.assign = F ) #access CLose and Open with stock$MOTS.Open
-  
   return( stock )
 }
 
 convertStockToDataFrame <- function( stock, name ){
-  dat <- as.data.frame(stock)
+  dat <- as.data.frame(coredata(stock))
   dat$date <- index(stock)
   dat <- subset(dat, date >= first( index(stock)) )
   
   str <- sprintf("^%s\\.", name)
   names(dat) <- sub(str, "", names(dat))
-  dat$stockName <- name 
   return( dat )
+}
+
+getStockDF <- function( name ){
+    try ( stock <- getStock( name ) )
+    if( missing(stock) )
+        return(NA)
+    stockDf <- convertStockToDataFrame( stock, name ) 
+    return(stockDf) 
+}
+
+dfToTimeSeries <- function( dataFrame, indexCol=ncol(dataFrame) ){
+    return( xts(dataFrame[,-indexCol], order.by=as.Date(  dataFrame[,indexCol], "%m/%d/%Y"))) 
+}
+
+numberParity <- function( num ){
+    if( is.na(num) )
+        return(NA)
+    indicator <- sign( num )
+    return(indicator) 
 }
 
 initStock <- function(){
@@ -29,6 +46,10 @@ initStock <- function(){
   stockList <- list( stock, stockDF, name )
   names(stockList) <- c("stocks", "stocksDF", "name")
   return( stockList )
+}
+
+zooToDataFrame <- function( xtsObj ){
+     return( data.frame(Date=as.Date(index(xtsObj)), xtsObj, check.names=FALSE, row.names=NULL) )
 }
 
 exportStockCSV <- function(stock, filename){
@@ -145,8 +166,9 @@ staplesSectorPerformance <- function( stock, to=as.Date(Sys.Date()), from=as.Dat
     correlationSP500( stock, stockScale="IXR", toDate=to, fromDate=from ) 
 }
 
-
-
+trailingPriceVolatility <- function( stock, windowSize=2, lookBack=windowSize){ 
+     
+}
 
 upwardPriceMovement <- function( stockClose, stockOpen){
     upward <- c()

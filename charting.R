@@ -1,5 +1,8 @@
 library(quantmod)
 library(TTR)
+source("technicalIndicators.R") 
+source("chartTools.R")
+source("settings.R")
 
 simpleChart <- function( stock, time='last 3 months'){
     chartSeries( stock,
@@ -8,13 +11,36 @@ simpleChart <- function( stock, time='last 3 months'){
                 subset=time, 
                 )
 }
-
 candleStickChartTicks <- function( stock, cName="" ){
     l <- xts(!as.logical(stock[,1]),index(stock))
     l[ length(stock[,1]) ] <- TRUE
     chart_Series(stock,
                  name=cName,
                  TA="add_TA(l,on=-1,col='grey',border='grey')", )
+}
+
+chartMACD <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MACD Chart 0.1" ){
+    getMACD <- stockMACD( stock )
+    macdIndicator <- indicatorMACD( zooToDataFrame( getMACD ) )
+    buyDates <- macdIndicator$buy[ macdIndicator$buy > startDate ]
+    buyXValues <- c()
+    for( i in 1:length(buyDates) ){
+        buyXValues[i] <- sum(!weekdays(seq(startDate, buyDates[i], "days")) %in% c("Saturday", "Sunday"))
+    }
+    sellDates <- macdIndicator$sell[ macdIndicator$sell > startDate ]
+    sellXValues <- c()
+    for( i in 1:length(sellDates) ){
+        sellXValues[i] <- sum(!weekdays(seq(startDate, sellDates[i], "days")) %in% c("Saturday", "Sunday"))
+    }
+    ta <- paste( "addMACD()", addVLinesToTSChart(buyXValues, c(1,2), buyIndicatorColor), addVLinesToTSChart(sellXValues, c(1,2), sellIndicatorColor), sep=";")
+    chartSeries(stock,
+                name=cName,
+                theme=chartTheme('white'),
+                subset=constructXtsDate(startDate, endDate),
+                TA= ta
+                )
+    
+    
 }
 
 movingAverageChart <- function( stock, time='last 3 months'){

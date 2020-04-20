@@ -2,11 +2,8 @@ library(TTR)
 source("settings.R")
 source("utils.R")
 
-
-
-candlestickBodyFilled <- function( stockQuote ){
-    
-    return( max( stockQuote$Close, stockQuote$Open ) == stockQuote$Open ) 
+candlestickBodyFilled <- function( openPrice, closePrice ){
+    return(  max( closePrice, openPrice ) == openPrice )
 }
 candlestickTotalLength <- function( stockHigh, stockLow ){
     return( stockHigh - stockLow ) 
@@ -23,6 +20,9 @@ candlestickLowerShadowLength <- function( stockClose, stockOpen, stockLow ){
 shadowsRatio <- function( upperShadow, lowerShadow ){
     # ratio = upperShadow/lowerShadow 
     return( upperShadow/lowerShadow ) 
+}
+shadowsWideRange <- function( stockHigh, stockLow ){
+
 }
 bodyCandleRatio <- function( bodyLength, candleLength ){
     # ratio = upperShadow/lowerShadow 
@@ -57,7 +57,8 @@ bodyBottomHeavy <- function( stockQuote){
     return( ratio < bodyPositionLimit )
 }
 patternBigBlack <- function( stockQuote){
-    if( candlestickBodyFilled( stockQuote) && bodyBig( stockQuote)  )
+    if( candlestickBodyFilled( stockQuote$Open, stockQuote$Close ) && 
+       bodyBig( stockQuote ) )
         return(TRUE)
-    return(FALSE)
+    return(FALSE) 
 }

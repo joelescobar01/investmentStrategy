@@ -4,3 +4,10 @@ bodyPositionLimit    = 0.3333
 
 dojiSizeTolerance       = 5.0e-3
 
+sdWideRange             = 2 
+
+timeLagConstant         = 1
+
+sellIndicatorColor      = 'green'
+
+buyIndicatorColor       = 'blue'
