@@ -9,6 +9,14 @@ stockMACD <- function( stock, fast=12,
              nSig=sig, percent=FALSE)
     return(na.omit(macd)) 
 }
+stockSmaRSI <- function( stock, pastDays=14 ){
+    rsi <- RSI(Cl(stock), SMA, n=pastDays)
+    return( na.omit(rsi)) 
+}
+stockEmaRSI <- function( stock, pastDays=14 ){
+    rsi <- RSI(Cl(stock), EMA, n=pastDays)
+    return( na.omit(rsi)) 
+}
 
 stockDFMACD <- function( stockDF,fast=12, 
                           slow=26, sig = 9 ){
@@ -25,30 +33,6 @@ indicatorSMA <- function(price, n){
     }
     sma <- reclass(sma, price)
     return(sma)                                                             
-}
-
-indicateMACDBuy <- function( macd ){ 
-    macdLine <- coredata( macd$macd ) 
-    sigLine <- coredata( macd$signal ) 
-    sellDate < c() 
-    buyDate <- c()
-    buyI = 1
-    sellI = 1
-    if( macdLine[1] > sigLine[1] )
-        macBelow = FALSE 
-    el
-    for(i in length(macd) ){
-        if( macdLine[i] > sigLine[i] ){
-            macBelow = FALSE
-            buyDate[ buyI ] = index(macd[i])  
-        }
-        else if( macdLine[i] < sigLine[i] ){
-            sellIndex = sellIndex+1
-            sellDate[ sellIndex ] <- startDate+i 
-            macBelow = TRUE 
-        }
-    }
-
 }
 
 indicatorMACD <- function( macdDF ){
@@ -77,6 +61,37 @@ indicatorMACD <- function( macdDF ){
     crossDate <- list( "buy" = buyDate, "sell" = sellDate )   
     return(crossDate)
 }
+
+indicatorRSI <- function( rsiDF ){
+    buyDate <- c()
+    sellDate <- c() 
+    buyIndex = 0
+    sellIndex = 0
+    betweenLimits = TRUE 
+    if( first(rsiDF$signal) == 1 )
+        betweenLimits = FALSE 
+    else if ( first(rsiDF$signal)== -1 )
+        betweenLimits = FALSE 
+    for( i in 2:nrow(rsiDF) ){
+        if( rsiDF$signal[i] == 1 && betweenLimits){
+            buyIndex = buyIndex + 1 
+            buyDate[buyIndex] <- rsiDF$Date[i] - timeLagConstant 
+            betweenLimits = FALSE 
+        } else if( rsiDF$signal[i] == -1 && betweenLimits){
+            sellIndex = sellIndex + 1 
+            sellDate[ sellIndex ] <- rsiDF$Date[i] - timeLagConstant
+            betweenLimits = FALSE 
+        } else if( rsiDF$signal[i] == 0 ){
+            betweenLimits = TRUE 
+        }
+    }
+
+    class(sellDate) <- "Date"
+    class(buyDate) <- "Date" 
+    crossDate <- list( "buy" = buyDate, "sell" = sellDate ) 
+    return(crossDate ) 
+}
+
 
 dailyCandleBodySize <- function( stockClose, stockOpen ){
     bodySize <- c()

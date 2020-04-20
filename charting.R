@@ -25,24 +25,55 @@ chartMACD <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName
     buyDates <- macdIndicator$buy[ macdIndicator$buy > startDate ]
     buyXValues <- c()
     for( i in 1:length(buyDates) ){
-        buyXValues[i] <- sum(!weekdays(seq(startDate, buyDates[i], "days")) %in% c("Saturday", "Sunday"))
+        buyXValues[i] <- businessDayCounter(startDate, buyDates[i])
     }
     sellDates <- macdIndicator$sell[ macdIndicator$sell > startDate ]
     sellXValues <- c()
     for( i in 1:length(sellDates) ){
-        sellXValues[i] <- sum(!weekdays(seq(startDate, sellDates[i], "days")) %in% c("Saturday", "Sunday"))
+        sellXValues[i] <- businessDayCounter( startDate, sellDates[i])
     }
-    ta <- paste( "addMACD()", addVLinesToTSChart(buyXValues, c(1,2), buyIndicatorColor), addVLinesToTSChart(sellXValues, c(1,2), sellIndicatorColor), sep=";")
+    ta <-addLinesToMACD(buysXValues, sellXValues) 
     chartSeries(stock,
-                name=cName,
-                theme=chartTheme('white'),
-                subset=constructXtsDate(startDate, endDate),
-                TA= ta
-                )
-    
-    
+            name=cName,
+            theme=chartTheme('white'),
+            subset=constructXtsDate(startDate, endDate),
+            TA= ta
+        )
 }
 
+chartRSI <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="RSI Chart 0.1" ){
+    getRSI <-  stockEmaRSI( stock )
+    rsiDF <- zooToDataFrame( getRSI ) 
+    rsiSignal <- c() 
+    for(i in 1:nrow(rsiDF) ){
+        if( rsiDF$rsi[i] > rsiOverboughtConstant ){
+            rsiSignal[i] = 1 
+        } else if( rsiDF$rsi[i] < rsiOversoldConstant ){
+            rsiSignal[i] = -1 
+        } else {
+            rsiSignal[i] = 0 
+        }
+    }
+    rsiDF$signal <- rsiSignal
+    limitDates <- indicatorRSI( rsiDF )  
+    buyXValues <- c()
+    buyDates <- limitDates$buy[ limitDates$buy > startDate ]
+    for( i in 1:length(buyDates) ){
+        buyXValues[i] <- businessDayCounter(startDate, buyDates[i])
+    }
+    sellXValues <- c() 
+    sellDates <- limitDates$sell[ limitDates$sell > startDate ]
+    for( i in 1:length(sellDates) ){
+        sellXValues[i] <- businessDayCounter( startDate, sellDates[i])
+    }
+    ta <-addLinesToRSI(buyXValues, sellXValues) 
+    chartSeries(stock,
+            name=cName,
+            theme=chartTheme('white'),
+            subset=constructXtsDate(startDate, endDate),
+            TA= ta
+        )
+}
 movingAverageChart <- function( stock, time='last 3 months'){
     chartSeries( stock,
                 theme=chartTheme('white'),

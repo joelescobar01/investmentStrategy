@@ -11,3 +11,6 @@ timeLagConstant         = 1
 sellIndicatorColor      = 'green'
 
 buyIndicatorColor       = 'blue'
+
+rsiOverboughtConstant   = 70
+rsiOversoldConstant     = 30 

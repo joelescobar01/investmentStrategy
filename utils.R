@@ -32,6 +32,14 @@ dfToTimeSeries <- function( dataFrame, indexCol=ncol(dataFrame) ){
     return( xts(dataFrame[,-indexCol], order.by=as.Date(  dataFrame[,indexCol], "%m/%d/%Y"))) 
 }
 
+businessDayCounter <- function( fromDate, toDate ){
+    if ( is.null(fromDate) || is.null(toDate) ) {
+        return(0)
+    }
+    workDays = sum(!weekdays(seq(fromDate, toDate, "days")) %in% c("Saturday", "Sunday"))
+    return(workDays) 
+}
+
 numberParity <- function( num ){
     if( is.na(num) )
         return(NA)
