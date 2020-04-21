@@ -1,6 +1,7 @@
 library(TTR)
 source("utils.R") 
 source('settings.R')
+source("rsiFunction.R")
 Sys.setenv(TZ = "UTC")
 
 stockMACD <- function( stock, fast=12, 

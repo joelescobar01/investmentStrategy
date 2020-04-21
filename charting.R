@@ -3,6 +3,7 @@ library(TTR)
 source("technicalIndicators.R") 
 source("chartTools.R")
 source("settings.R")
+source("momFunction.R")
 
 simpleChart <- function( stock, time='last 3 months'){
     chartSeries( stock,
@@ -10,13 +11,6 @@ simpleChart <- function( stock, time='last 3 months'){
                 theme=chartTheme('white'),
                 subset=time, 
                 )
-}
-candleStickChartTicks <- function( stock, cName="" ){
-    l <- xts(!as.logical(stock[,1]),index(stock))
-    l[ length(stock[,1]) ] <- TRUE
-    chart_Series(stock,
-                 name=cName,
-                 TA="add_TA(l,on=-1,col='grey',border='grey')", )
 }
 
 chartMACD <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MACD Chart 0.1" ){
@@ -55,13 +49,16 @@ chartRSI <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName=
         }
     }
     rsiDF$signal <- rsiSignal
+    #rsiDF$signal <- rsiSetup( rsiDF )
     limitDates <- indicatorRSI( rsiDF )  
     buyXValues <- c()
+    #buyXValues <- rsiBuyXValues( limitDates$buy, startDate ) 
     buyDates <- limitDates$buy[ limitDates$buy > startDate ]
     for( i in 1:length(buyDates) ){
         buyXValues[i] <- businessDayCounter(startDate, buyDates[i])
     }
-    sellXValues <- c() 
+    sellXValues <- c()
+    #sellXValues <- rsiBuyXValues( limitDates$sell, startDate ) 
     sellDates <- limitDates$sell[ limitDates$sell > startDate ]
     for( i in 1:length(sellDates) ){
         sellXValues[i] <- businessDayCounter( startDate, sellDates[i])
@@ -73,6 +70,33 @@ chartRSI <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName=
             subset=constructXtsDate(startDate, endDate),
             TA= ta
         )
+}
+
+chartMomentum <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MOM Chart 0.1" ){
+    getMOM <-  stockMomentum( stock )
+    momDF <- zooToDataFrame( getMOM ) 
+    momDF <- momentumParity( momDF )
+    dateChange <- changeInSlopeDir( momDF ) 
+    buyXValues <- momBuyXValues( dateChange$buy, startDate ) 
+    sellXValues <- momSellXValues( dateChange$sell, startDate ) 
+    ta <- addLinesToMOM(buyXValues, sellXValues) 
+    print(ta)
+    chartSeries(stock,
+            name=cName,
+            theme=chartTheme('white'),
+            subset=constructXtsDate(startDate, endDate),
+            TA= ta
+        )
+
+}    
+chartBBands <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="BBands Chart 0.1" ){
+    chartSeries( stock,
+                 theme=chartTheme('white'),
+                 subset='last 3 months',
+                 TA="addBBands( n=20, sd=2 )"
+    )
+    
+    
 }
 movingAverageChart <- function( stock, time='last 3 months'){
     chartSeries( stock,
@@ -92,29 +116,11 @@ chartEMA <- function( stock, time='last 3 months'  ){
                 )
 }
 
-#BBands(Cl(), n=20, sd=2)
-# Cl, AvgHi, H, L, Cl can be used 
-chartBBands <- function( stock, from=20, sd=2, time='last 3 months'  ){
-    chartSeries( stock,
-                theme=chartTheme('white'),
-                subset='last 3 months', 
-                TA="addBBands( n=20, sd=2 )"
-                )
-
-}
-
-chartMomentum <- function( stock, time='last 3 months'  ){
-    chartSeries( stock,
-                theme=chartTheme('white'),
-                subset='last 3 months', 
-                TA="addMomentum(n=1)"
-                )
-}
 
 chartADX <- function( stock, time='last 3 months' ){
     chartSeries( stock,
                 theme=chartTheme('white'),
                 subset=time,
-                TA="addADX(n=14, maType=EMA)"
+                TA="addADX()"
                 )
 }

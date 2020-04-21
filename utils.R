@@ -2,7 +2,6 @@ library(quantmod)
 library(plotly)
 library(ggplot2)
 library(PerformanceAnalytics)
-library(alphavantager) 
 
 getStock <- function(name){
   stock <-
@@ -41,8 +40,6 @@ businessDayCounter <- function( fromDate, toDate ){
 }
 
 numberParity <- function( num ){
-    if( is.na(num) )
-        return(NA)
     indicator <- sign( num )
     return(indicator) 
 }
