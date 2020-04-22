@@ -7,27 +7,28 @@ source("settings.R")
 source("momFunction.R")
 source("bBandFunction.R")
 source("adxFunction.R")
-
+library(ggplot2)
 
 chartMACD <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MACD Chart 0.1" ){
     getMACD <- stockMACD( stock )
-    macdIndicator <- indicatorMACD( zooToDataFrame( getMACD ) )
+    macdDF <- zooToDataFrame( getMACD )
+    macdIndicator <- indicatorMACD( macdDF )
     buyDates <- macdIndicator$buy[ macdIndicator$buy > startDate ]
     buyXValues <- c()
-    for( i in 1:length(buyDates) ){
+    for( i in seq_along(buyDates) ){
         buyXValues[i] <- businessDayCounter(startDate, buyDates[i])
     }
     sellDates <- macdIndicator$sell[ macdIndicator$sell > startDate ]
     sellXValues <- c()
-    for( i in 1:length(sellDates) ){
+    for( i in seq_along(sellDates) ){
         sellXValues[i] <- businessDayCounter( startDate, sellDates[i])
     }
-    ta <-addLinesToMACD(buysXValues, sellXValues) 
+    ta <-addLinesToMACD(buyXValues, sellXValues) 
     chartSeries(stock,
             name=cName,
             theme=chartTheme('white'),
-            subset=constructXtsDate(startDate, endDate),
-            TA= ta
+            subset=paste(startDate,endDate,sep="::"),
+            TA=ta
         )
 }
 
@@ -50,22 +51,25 @@ chartRSI <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName=
     buyXValues <- c()
     #buyXValues <- rsiBuyXValues( limitDates$buy, startDate ) 
     buyDates <- limitDates$buy[ limitDates$buy > startDate ]
-    for( i in 1:length(buyDates) ){
+    for( i in seq_along(buyDates) ){
         buyXValues[i] <- businessDayCounter(startDate, buyDates[i])
     }
+    
     sellXValues <- c()
     #sellXValues <- rsiBuyXValues( limitDates$sell, startDate ) 
     sellDates <- limitDates$sell[ limitDates$sell > startDate ]
-    for( i in 1:length(sellDates) ){
+    for( i in seq_along(sellDates) ){
         sellXValues[i] <- businessDayCounter( startDate, sellDates[i])
     }
     ta <-addLinesToRSI(buyXValues, sellXValues) 
+    
     chartSeries(stock,
             name=cName,
+            subset= paste(startDate,endDate,sep="::"),
             theme=chartTheme('white'),
-            subset=constructXtsDate(startDate, endDate),
             TA= ta
         )
+    
 }
 
 chartMomentum <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MOM Chart 0.1" ){
@@ -76,11 +80,10 @@ chartMomentum <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, c
     buyXValues <- momBuyXValues( dateChange$buy, startDate ) 
     sellXValues <- momSellXValues( dateChange$sell, startDate ) 
     ta <- addLinesToMOM(buyXValues, sellXValues) 
-    print(ta)
     chartSeries(stock,
             name=cName,
             theme=chartTheme('white'),
-            subset=constructXtsDate(startDate, endDate),
+            subset=paste(startDate,endDate,sep="::"),
             TA= ta
         )
 
@@ -97,13 +100,20 @@ chartBBands <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cNa
     
     chartSeries( stock,
                  theme=chartTheme('white'),
-                 subset=constructXtsDate(startDate, endDate),
+                 subset=paste(startDate,endDate,sep="::"),
                  TA=ta,
                  name=cName
     )
 }
 
-chartADX <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90 ){
+chartBBands2 <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="BBands Chart 1.1" ){
+    getBBAND <- stockBBands(stock)
+    bbandDF <- zooToDataFrame(getBBAND)
+    print(bbandDF)
+    ggplot(stock, aes(x= index(stock), y= Cl(stock) ))
+}
+
+chartADX <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="ADX Chart 0.1" ){
     #ADX values help traders identify the strongest and most profitable trends to trade. 
     #The values are also important for distinguishing between trending and non-trending 
     #conditions. Many traders will use ADX readings above 25 to suggest that the trend 
@@ -132,8 +142,8 @@ chartADX <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90 ){
         geom_abline(slope=0, intercept=50,  col = "blue",lty=2) +
         geom_vline(xintercept=adxSig$uptrend , linetype=2, colour="orange") +
         geom_vline(xintercept=adxSig$downtrend , linetype=2, colour="black")+
-        ggtitle("Trend Strength") +
+        ggtitle(cName) +
         xlab("Dates") + ylab("ADX") 
-    ggarrange(g1, g2, ncol=1, nrow=2 )
+    return( ggarrange(g1, g2, ncol=1, nrow=2 ) )
     
 }

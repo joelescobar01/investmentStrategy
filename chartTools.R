@@ -49,9 +49,9 @@ addHLinesToTSChart <- function( pointV=c(), chartNum=c(),
 }
 
 
-addLinesToMACD <- function( buyXVals, sellXVals){
+addLinesToMACD <- function( buyXValues, sellXValues){
 
-    return( paste( "addMACD()", 
+    return( paste( "addMACD(fast=12,slow=26,signal=9,type='EMA')", 
                   addVLinesToTSChart(buyXValues, c(1,2), buyIndicatorColor), 
                   addVLinesToTSChart(sellXValues, c(1,2), sellIndicatorColor), 
                   sep=";") ) 

@@ -24,6 +24,32 @@ stockMonthlyLows <- function(stock){
     return( Lo( to.monthly(stock) ) )
 }
 
+lagDiff <- function( vect1, vect2, lag=1 ){
+    diffV <- c() 
+    for(i in 2:nrow( vect1 ) ){
+        diffV[i] = sign(vect1[i]) - sign(vect2[i-lag]) 
+    }
+    return(diffV) 
+}
+
+buyLargePriceDiff <- function( stock, threshold=0.005 ){
+    price <- Cl(stock) # close price
+    r <- price/Lag(price) - 1 # % price change
+    delta <- threshold #threshold
+    signal <-c(0) # first date has no signal
+    #Loop over all trading days (except the first)
+    for (i in 2: length(price)){
+        if (r[i] > delta){
+            signal[i]<- 1
+        } else
+            signal[i]<- 0
+    }
+    print(signal)
+    print(price)
+    signal<-reclass(signal,price)
+    return(signal)
+}
+    
 stockMACD <- function( stock, fast=12, 
                           slow=26, sig = 9 ){
     macd <- MACD(Cl(stock), nFast=fast, nSlow=slow,
@@ -59,24 +85,9 @@ indicatorSMA <- function(price, n){
 indicatorMACD <- function( macdDF ){
     #columns macd => price(volume) oscillator
     # sdignal => oscillator signal (movingAvg of the oscillator ) 
-    buyDate <- c() 
-    sellDate <- c()
-    buyIndex = 0
-    sellIndex = 0  
-    macBelow = first( macdDF$macd ) < first( macdDF$signal )
-    
-    for(i in 1:nrow(macdDF)){
-        if( macdDF$macd[i] > macdDF$signal[i] && macBelow ){
-            buyIndex=buyIndex+1
-            buyDate[ buyIndex ] <- macdDF$Date[i] - timeLagConstant 
-            macBelow = FALSE 
-        }
-        else if( macdDF$macd[i] < macdDF$signal[i]  && !macBelow ){
-            sellIndex = sellIndex+1
-            sellDate[ sellIndex ] <- macdDF$Date[i] - timeLagConstant
-            macBelow = TRUE 
-        }
-    }
+    buyDate <- macdDF[ macdDF$macd > macdDF$signal, 'Date']
+    sellDate <- macdDF[ macdDF$macd < macdDF$signal, 'Date']
+  
     class(buyDate) <- "Date"
     class(sellDate) <- "Date" 
     crossDate <- list( "buy" = buyDate, "sell" = sellDate )   

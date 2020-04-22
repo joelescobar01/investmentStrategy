@@ -9,6 +9,23 @@ getStock <- function(name){
   return( stock )
 }
 
+removeNameFromColumn <- function( stock, name ){
+  #names(stock) <- gsub("^.+\\.","",names(name))
+}
+
+dataFrameColLag <- function( colA, colB, lag=1 ){
+  #colA(t) - colB(t-1)
+  diffCol <- c() 
+  for(i in 1:length(colA) ){
+    if( i == 1){
+      diffCol[i] = NA
+      i = i+1 
+    } 
+    diffCol[i] <- colA[i] + colB[i-lag]
+  }
+  return(diffCol)
+}
+
 convertStockToDataFrame <- function( stock, name ){
   dat <- as.data.frame(coredata(stock))
   dat$date <- index(stock)
