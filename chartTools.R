@@ -51,27 +51,30 @@ addHLinesToTSChart <- function( pointV=c(), chartNum=c(),
 
 addLinesToMACD <- function( buyXValues, sellXValues){
 
-    return( paste( "addMACD(fast=12,slow=26,signal=9,type='EMA')", 
+    pattern = gsub(';;+', ';',paste( "addMACD(fast=12,slow=26,signal=9,type='EMA')", 
                   addVLinesToTSChart(buyXValues, c(1,2), buyIndicatorColor), 
                   addVLinesToTSChart(sellXValues, c(1,2), sellIndicatorColor), 
-                  sep=";") ) 
+                  sep=";") )
+    return(pattern)
 }
 
-addLinesToRSI <- function( buyXValues, sellXValues){
-
-    return( paste( "addRSI(n='14', maType='EMA')", 
+addLinesToRSI <- function( buyXValues=c(), sellXValues=c() ){
+    
+    pattern = gsub(';;+', ';', paste( "addRSI(n=14, maType='EMA')", 
                   addVLinesToTSChart(buyXValues, c(1,2), buyIndicatorColor), 
                   addVLinesToTSChart(sellXValues, c(1,2), sellIndicatorColor),
                   addHLinesToTSChart(c( 30,70), 2, 'grey'),
                   sep=";") ) 
+    return( pattern )
 }
 
 addLinesToMOM <- function( buyXValues, sellXValues){
-    print("Working")
-    return( paste( "addMomentum()", 
+    
+    pattern = gsub(';;+', ';', paste( "addMomentum()", 
                   addVLinesToTSChart(buyXValues, c(1,2), buyIndicatorColor), 
                   addVLinesToTSChart(sellXValues, c(1,2), sellIndicatorColor),
                   sep=";") ) 
+    return(pattern)
 }
 addLinesToBBAND <- function( buyXValues, sellXValues){
     if( length(buyXValues) == 0 && length(sellXValues) == 0 )
@@ -85,8 +88,9 @@ addLinesToBBAND <- function( buyXValues, sellXValues){
                        addVLinesToTSChart(buyXValues, 1, buyIndicatorColor),
                        sep=";")  )
     
-    return( paste( "addBBands(n=13,sd=2)", 
+    pattern = gsub(';;+', ';', paste( "addBBands(n=13,sd=2)", 
                    addVLinesToTSChart(buyXValues, 1, buyIndicatorColor), 
                    addVLinesToTSChart(sellXValues, 1, sellIndicatorColor),
-                   sep=";") ) 
+                   sep=";") )
+    return(pattern)
 }

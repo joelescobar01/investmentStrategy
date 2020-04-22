@@ -16,3 +16,5 @@ rsiOversoldConstant     = 30
 
 BBandOversoldConstant   = 1
 BBandOverboughtConstant = 0
+
+momentumThreshold = 0 

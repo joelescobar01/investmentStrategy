@@ -4,9 +4,10 @@ library(ggplot2)
 library(PerformanceAnalytics)
 
 getStock <- function(name){
-  stock <-
-    getSymbols(name, auto.assign = F ) #access CLose and Open with stock$MOTS.Open
-  return( stock )
+  suppressWarnings( stock <- getSymbols(name, auto.assign = F ) ) #access CLose and Open with stock$MOTS.Open
+  stock <- adjustOHLC( stock )
+  return( na.fill(stock, fill=0.00 ) )
+  
 }
 
 removeNameFromColumn <- function( stock, name ){

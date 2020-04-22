@@ -8,6 +8,7 @@ source("momFunction.R")
 source("bBandFunction.R")
 source("adxFunction.R")
 library(ggplot2)
+library('forecast')
 
 chartMACD <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MACD Chart 0.1" ){
     getMACD <- stockMACD( stock )
@@ -62,30 +63,35 @@ chartRSI <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName=
         sellXValues[i] <- businessDayCounter( startDate, sellDates[i])
     }
     ta <-addLinesToRSI(buyXValues, sellXValues) 
-    
     chartSeries(stock,
             name=cName,
-            subset= paste(startDate,endDate,sep="::"),
             theme=chartTheme('white'),
+            subset= paste(startDate,endDate,sep="::"),
             TA= ta
         )
     
 }
 
-chartMomentum <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MOM Chart 0.1" ){
+chartMomentum <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MOM Chart 1.1" ){
     getMOM <-  stockMomentum( stock )
     momDF <- zooToDataFrame( getMOM ) 
     momDF <- momentumParity( momDF )
-    dateChange <- changeInSlopeDir( momDF ) 
-    buyXValues <- momBuyXValues( dateChange$buy, startDate ) 
-    sellXValues <- momSellXValues( dateChange$sell, startDate ) 
-    ta <- addLinesToMOM(buyXValues, sellXValues) 
-    chartSeries(stock,
-            name=cName,
-            theme=chartTheme('white'),
-            subset=paste(startDate,endDate,sep="::"),
-            TA= ta
-        )
+    #dateChange <- changeInSlopeDir( momDF ) 
+    #buyXValues <- momBuyXValues( dateChange$buy, startDate ) 
+    #sellXValues <- momSellXValues( dateChange$sell, startDate ) 
+    #ta <- addLinesToMOM(buyXValues, sellXValues) 
+    g <- ggplot(momDF, aes(Date, momentum)) +
+        geom_area() + 
+        labs(title=cName, y="Momentum Strength (slope)", x="Date") + 
+        theme(legend.position="None") + 
+        scale_x_date( date_minor_breaks = "5 days", limits= c( startDate, endDate) )
+    plot(g)
+    # chartSeries(stock,
+    #         name=cName,
+    #         theme=chartTheme('white'),
+    #         subset=paste(startDate,endDate,sep="::"),
+    #         TA= ta
+    #     )
 
 }    
 chartBBands <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="BBands Chart 0.1" ){

@@ -5,6 +5,7 @@ source("settings.R")
 
 stockMomentum <- function( stock, pastDays=2 ){
     mom <- momentum(Cl(stock), n=pastDays)
+    colnames(mom)[1] <- "momentum"
     return( na.omit(mom)) 
 }
 
@@ -15,7 +16,9 @@ momentumParity <- function( momentumDF ){
 
 changeInSlopeDir <- function( momentumDF ){
     zeroLessMomentum <- subset( momentumDF, sign != 0 ) 
-    prevValue = first(momentumDF$sign) 
+    bullishMomentum <- momentumDF[ momentumDF$sign > momentumThreshold, 1:2]
+    bearishMomentum <- momentumDF[ momentumDF$sign < momentumThreshold, 1:2]
+    
     buySignal <- c() 
     buyIndex = 1
     sellSignal <- c()
