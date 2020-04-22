@@ -31,6 +31,10 @@ dfToTimeSeries <- function( dataFrame, indexCol=ncol(dataFrame) ){
     return( xts(dataFrame[,-indexCol], order.by=as.Date(  dataFrame[,indexCol], "%m/%d/%Y"))) 
 }
 
+dfToTimeSeries2 <- function( dataFrameData, indexCol=dataFrameDate ){
+  return( xts(dataFrameData, order.by=as.Date(  indexCol, "%m/%d/%Y"))) 
+}
+
 businessDayCounter <- function( fromDate, toDate ){
     if ( is.null(fromDate) || is.null(toDate) ) {
         return(0)
@@ -64,6 +68,14 @@ exportStockCSV <- function(stock, filename){
     file <- paste( getwd(), "/", filename, sep="")
     write.csv(x, file, row.names = TRUE)
     return(x)
+}
+
+getPeaks <- function( data, minValue=0 ){
+  return( na.omit( findPeaks(data, thresh=minValue) ))
+}
+
+getValleys <- function( data, minValue=0){
+  return( na.omit(findValleys(data, thresh=minValue)))  
 }
 
 getQuoteToday <- function(stock) {

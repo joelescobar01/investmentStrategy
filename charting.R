@@ -1,17 +1,13 @@
 library(quantmod)
 library(TTR)
+library(ggpubr)
 source("technicalIndicators.R") 
 source("chartTools.R")
 source("settings.R")
 source("momFunction.R")
+source("bBandFunction.R")
+source("adxFunction.R")
 
-simpleChart <- function( stock, time='last 3 months'){
-    chartSeries( stock,
-                type="line",
-                theme=chartTheme('white'),
-                subset=time, 
-                )
-}
 
 chartMACD <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MACD Chart 0.1" ){
     getMACD <- stockMACD( stock )
@@ -90,37 +86,54 @@ chartMomentum <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, c
 
 }    
 chartBBands <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="BBands Chart 0.1" ){
+    getBBAND <- stockBBands(stock)
+    bbandDF <- zooToDataFrame(getBBAND)
+    bSignal <- bbSetup(bbandDF)
+    buyXValues <- bbandBuyXValues(bSignal$buy , startDate)
+    
+    sellXValues <- bbandSellXValues(bSignal$sell, startDate )
+    
+    ta <- addLinesToBBAND(buyXValues, sellXValues )
+    
     chartSeries( stock,
                  theme=chartTheme('white'),
-                 subset='last 3 months',
-                 TA="addBBands( n=20, sd=2 )"
+                 subset=constructXtsDate(startDate, endDate),
+                 TA=ta,
+                 name=cName
     )
+}
+
+chartADX <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90 ){
+    #ADX values help traders identify the strongest and most profitable trends to trade. 
+    #The values are also important for distinguishing between trending and non-trending 
+    #conditions. Many traders will use ADX readings above 25 to suggest that the trend 
+    #is strong enough for trend-trading strategies. Conversely, when ADX is below 25, 
+    #many will avoid trend-trading strategies.
+    stockADX <- stockADX(stock)
+    adxDF <- zooToDataFrame(stockADX)
+    adxDF <- adxDF[ which( adxDF$Date >= startDate ),  ]
+    adxDF <- adxDF[ which( adxDF$Date <= endDate ), ]
     
+    adxSig <- adxSignals( adxDF )
+    adxUpX <- signalXValues( adxSig$uptrend, startDate )
+    adxDoX <- signalXValues( adxSig$downtrend, startDate )
+ 
+    g1 <- ggplot( adxDF, aes(x=adxDF[,'Date'], y=max(adxDF[,'DIp'], adxDF[,'DIn']))) + 
+        geom_line( aes(y=adxDF[,'DIp']), colour="red", size=1 ) + 
+        geom_line( aes(y=adxDF[,'DIn']), color='blue', size=1) +
+        scale_colour_discrete(guide = 'none')+
+        ggtitle("Trend Strength") +
+        xlab("Dates") + ylab("DMI") +
+        geom_vline(xintercept=adxSig$uptrend , linetype=2, colour="orange") +
+        geom_vline(xintercept=adxSig$downtrend , linetype=2, colour="black")
+    g2 <- ggplot(adxDF, aes( x=adxDF[,'Date'], adxDF[,'ADX'])) + 
+        geom_bar(stat="identity", width=0.5) + 
+        geom_abline(slope=0, intercept=20,  col = "red",lty=2) +
+        geom_abline(slope=0, intercept=50,  col = "blue",lty=2) +
+        geom_vline(xintercept=adxSig$uptrend , linetype=2, colour="orange") +
+        geom_vline(xintercept=adxSig$downtrend , linetype=2, colour="black")+
+        ggtitle("Trend Strength") +
+        xlab("Dates") + ylab("ADX") 
+    ggarrange(g1, g2, ncol=1, nrow=2 )
     
-}
-movingAverageChart <- function( stock, time='last 3 months'){
-    chartSeries( stock,
-                theme=chartTheme('white'),
-                subset=time, 
-                TA="addSMA(13);addSMA(55)"
-                )
-}
-
-#EMA(stock, lookbackPeriod) 
-chartEMA <- function( stock, time='last 3 months'  ){
-    chartSeries( stock,
-                name=,
-                subset='last 3 months',  
-                theme=chartTheme('white'),
-                TA="addEMA(13,on=1,col='blue');addEMA(55, on=1,col='red')"
-                )
-}
-
-
-chartADX <- function( stock, time='last 3 months' ){
-    chartSeries( stock,
-                theme=chartTheme('white'),
-                subset=time,
-                TA="addADX()"
-                )
 }

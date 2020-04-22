@@ -20,7 +20,7 @@ numericalDateDiff <- function( date1, date2 ){
 #addVerticalLines 
 addVLinesToTSChart <- function( pointV=c(), chartNum=c(), 
                                col='red', extraArg="" ){
-    if( length(pointV) == 0 )
+    if(length(pointV) == 0)
         return("")
     if( length(chartNum) == 0 )
         return("")
@@ -72,4 +72,21 @@ addLinesToMOM <- function( buyXValues, sellXValues){
                   addVLinesToTSChart(buyXValues, c(1,2), buyIndicatorColor), 
                   addVLinesToTSChart(sellXValues, c(1,2), sellIndicatorColor),
                   sep=";") ) 
+}
+addLinesToBBAND <- function( buyXValues, sellXValues){
+    if( length(buyXValues) == 0 && length(sellXValues) == 0 )
+        return( "addBands(n=13,sd2)" )
+    if( length(buyXValues) == 0 )
+        return( paste( "addBBands(n=13,sd=2)", 
+                       addVLinesToTSChart(sellXValues, 1, sellIndicatorColor),
+                       sep=";")  )
+    if( length(sellXValues) == 0 )
+        return( paste( "addBBands(n=13,sd=2)", 
+                       addVLinesToTSChart(buyXValues, 1, buyIndicatorColor),
+                       sep=";")  )
+    
+    return( paste( "addBBands(n=13,sd=2)", 
+                   addVLinesToTSChart(buyXValues, 1, buyIndicatorColor), 
+                   addVLinesToTSChart(sellXValues, 1, sellIndicatorColor),
+                   sep=";") ) 
 }

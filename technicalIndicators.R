@@ -4,6 +4,26 @@ source('settings.R')
 source("rsiFunction.R")
 Sys.setenv(TZ = "UTC")
 
+stock3DayPeriod <- function( stock ){
+    period.apply(CAT,endpoints(stock,on='days', k=4 ),
+                 FUN=function(x) { max(Cl(x)) } ) 
+}
+stockWeeklyHighs <- function(stock){
+    return( Hi( to.weekly(stock) ) )
+}
+
+stockMonthlyHighs <- function(stock){
+    return( Hi( to.monthly(stock) ) )
+}
+
+stockWeeklyLows <- function(stock){
+    return( Lo( to.weekly(stock) ) )
+}
+
+stockMonthlyLows <- function(stock){
+    return( Lo( to.monthly(stock) ) )
+}
+
 stockMACD <- function( stock, fast=12, 
                           slow=26, sig = 9 ){
     macd <- MACD(Cl(stock), nFast=fast, nSlow=slow,

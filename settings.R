@@ -9,8 +9,10 @@ sdWideRange             = 2
 timeLagConstant         = 1
 
 sellIndicatorColor      = 'green'
-
 buyIndicatorColor       = 'blue'
 
 rsiOverboughtConstant   = 70
-rsiOversoldConstant     = 30 
+rsiOversoldConstant     = 30
+
+BBandOversoldConstant   = 1
+BBandOverboughtConstant = 0
