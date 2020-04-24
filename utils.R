@@ -164,10 +164,19 @@ correlationSP500 <- function( stock, stockScale="^GSPC",
                         from=fromDate,
                         to=toDate,
                         auto.assign=FALSE ) 
-    data<-cbind( diff(log(Cl(sp500))), diff(log(Cl(stock)))) 
-    chart.Correlation(data) 
+      data<-cbind( diff(log(Cl(sp500))), diff(log(Cl(stock)))) 
+      chart.Correlation(data) 
 }
 
+
+correlationSP500Loop <- function( stock, sp500, 
+                              toDate=as.Date(Sys.Date()), fromDate=as.Date( to-90 ) ){
+  sp500 <- getSymbols(stockScale, 
+                      from="2020-01-13",
+                      auto.assign=FALSE ) 
+  data<-cbind( diff(log(Cl(sp500))), diff(log(Cl(stock)))) 
+  chart.Correlation(data) 
+}
 
 techSectorPerformance <- function( stock, to=as.Date(Sys.Date()), from=as.Date( to-90 )) {
     correlationSP500( stock, stockScale="IXT", toDate=to, fromDate=from ) 

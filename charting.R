@@ -1,6 +1,7 @@
 library(quantmod)
 library(TTR)
 library(ggpubr)
+library(tidyquant) 
 source("technicalIndicators.R") 
 source("chartTools.R")
 source("settings.R")
@@ -9,6 +10,21 @@ source("bBandFunction.R")
 source("adxFunction.R")
 library(ggplot2)
 library('forecast')
+
+chartCandlesticks <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MACD Chart 0.1" ){
+    stockDF <- zooToDataFrame(stock)
+    colnames(stockDF) <- c( "Date", "Open", "High", "Low", "Close", "Volume", "Adjusted" )
+    g1 <- ggplot(stockDF, aes(x = Date , y = Close)) +
+            geom_candlestick(aes(open = Open, high = High, low = Low, close = Close)) +
+            geom_ma(ma_fun = SMA, n = 13, linetype = 5, size = 1.25) +  
+            labs(title = "Candlestick Chart", y = "Closing Price", x = "") + 
+            #xlim(as.Date(c( startDate , endDate ))) +
+            scale_x_date(   limits = as.Date(c( startDate, endDate )),
+                            date_labels = "%m/%d") +
+            theme_tq(
+            ) 
+     return(g1)
+}
 
 chartMACD <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MACD Chart 0.1" ){
     getMACD <- stockMACD( stock )
@@ -80,7 +96,7 @@ chartMomentum <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, c
     #buyXValues <- momBuyXValues( dateChange$buy, startDate ) 
     #sellXValues <- momSellXValues( dateChange$sell, startDate ) 
     #ta <- addLinesToMOM(buyXValues, sellXValues) 
-    g <- ggplot(momDF, aes(Date, momentum)) +
+    g <- ggplot(momDF, aes(Date, momentum, na.rm = TRUE)) +
         geom_area() + 
         labs(title=cName, y="Momentum Strength (slope)", x="Date") + 
         theme(legend.position="None") + 
@@ -134,7 +150,7 @@ chartADX <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName=
     adxUpX <- signalXValues( adxSig$uptrend, startDate )
     adxDoX <- signalXValues( adxSig$downtrend, startDate )
  
-    g1 <- ggplot( adxDF, aes(x=adxDF[,'Date'], y=max(adxDF[,'DIp'], adxDF[,'DIn']))) + 
+    g1 <- ggplot( adxDF, aes(x=adxDF[,'Date'], y=max(adxDF[,'DIp'], adxDF[,'DIn']), na.rm = TRUE)) + 
         geom_line( aes(y=adxDF[,'DIp']), colour="red", size=1 ) + 
         geom_line( aes(y=adxDF[,'DIn']), color='blue', size=1) +
         scale_colour_discrete(guide = 'none')+
