@@ -2,7 +2,12 @@ require(quantmod)
 require(PerformanceAnalytics)
 source("utils.R")
 require(forecast)
-
+require(purrr)
+require(tibble)
+require(lubridate)
+require(tidyquant)
+require(dplyr)
+require(tidyverse)
 # width="600px" border="0" cellspacing="0" cellpadding="0" bgcolor="#336699"
 
 stockReturns <- function( stockClosePriceXts, stockOpenPriceXts ){
@@ -68,11 +73,37 @@ pricePrediction <- function( stockQuartersXts ){
     fKOnaive <- naive(as.ts(stockQuartersXts),h=cOmit)
     autoplot(stockQuartersXts) + geom_forecast(fKOnaive,alpha=0.4)+ggtitle("Forecast Naive")
     
-    
 }
 
 
-# tbillInterestRate <- getSymbols( "DGS3MO", src='FRED', auto.assign = FALSE )
+  # symbols <- sort(c("SPY","VGT","EFA","DBC","AGG"))
+  # 
+  # prices <- 
+  #   getSymbols(symbols, src = 'yahoo', from = "2013-01-01", 
+  #              auto.assign = TRUE, warnings = FALSE) %>% 
+  #   map(~Cl(get(.))) %>%
+  #   reduce(merge) %>% 
+  #   `colnames<-`(symbols)
+  # 
+  # portfolio_component_monthly_returns_xts 
+  # prices_monthly <-
+  #   to.monthly(prices, OHLC = FALSE)
+  # prices
+  # returns <-na.omit(ROC(prices_monthly, 1, type = "continuous"))
+  #   
+  # weights <- c(0.10, 0.10, 0.20, 0.40, 0.20)
+  # 
+  
+  # First, we assign the weights of each asset.
+  # Then, we isolate and assign returns of each asset.
+  # Next, we plug those weights and returns into the equation for portfolio standard deviation, which involves the following:
+  #   Take the weight squared of each asset times its variance, and sum those weighted variance terms.
+  # Then we take the covariance of each asset pair, multiplied by two times the weight of the first asset times the weight of the second asset.
+  # Sum together the covariance terms and the weighted variance terms. This gives us the portfolio variance.
+  # Then take the square root to get the standard deviation.
+  
+  
+  # tbillInterestRate <- getSymbols( "DGS3MO", src='FRED', auto.assign = FALSE )
 # 
 # dailyYield <- (1+(tbillInterestRate[,1]/100))^(1/252) - 1
 # quarterYield <- to.quarterly(dailyYield)

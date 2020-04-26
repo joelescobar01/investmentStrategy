@@ -124,6 +124,25 @@ indicatorRSI <- function( rsiDF ){
     return(crossDate ) 
 }
 
+weekHighs <- function( stock, week ){
+   return( seriesHi( tail( to.weekly(stock), n=week ) ) )
+}
+
+returnsLog <- function(stock ){
+  diff(OpCl(stock))
+}
+
+# weekLows <- function( stock, week ){
+#   return( seriesHi( tail( to.weekly(CAT), n=week ) ) )
+# }
+# 
+# weeksMaxVolumeTrade <- function( stock, week ){
+#   weekRecords <- tail( to.weekly(stock,FUN=function(x) { max(Vo(x)) } ), n=week )
+#   
+# }
+
+  
+  
 
 dailyCandleBodySize <- function( stockClose, stockOpen ){
     bodySize <- c()
