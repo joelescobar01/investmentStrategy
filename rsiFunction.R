@@ -8,6 +8,7 @@ stockSmaRSI <- function( stock, pastDays=14 ){
     return( na.omit(rsi)) 
 }
 stockEmaRSI <- function( stock, pastDays=14 ){
+    
     rsi <- RSI(Cl(stock), EMA, n=pastDays)
     return( na.omit(rsi)) 
 }

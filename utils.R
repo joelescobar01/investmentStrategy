@@ -3,11 +3,19 @@ library(plotly)
 library(ggplot2)
 library(PerformanceAnalytics)
 
-getStock <- function(name){
-  suppressWarnings( stock <- getSymbols(name, auto.assign = F ) ) #access CLose and Open with stock$MOTS.Open
-  stock <- adjustOHLC( stock )
-  return( na.fill(stock, fill=0.00 ) )
-  
+getStock <- function(symbol){
+  data1 <- NULL                               # NULL data1
+  data1 <- tryCatch(getSymbols(Symbols = symbol,  
+                               src = "yahoo", 
+                               auto.assign = FALSE),
+                    error=function(e){})      # empty function for error handling
+  if(is.null(data1)) return(NA) 
+  # if data1 is still NULL go to next ticker             # if data1 is still NULL go to next ticker  
+  #stock <- adjustOHLC( data1 )
+  data1 <- adjustOHLC(data1,
+              use.Adjusted = TRUE,
+            )
+  return( na.fill(data1, fill=0.00 ) )
 }
 
 removeNameFromColumn <- function( stock, name ){

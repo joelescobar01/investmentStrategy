@@ -181,7 +181,7 @@ chartBBands2 <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cN
     ggplot(stock, aes(x= index(stock), y= Cl(stock) ))
 }
 
-chartADX <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="ADX Chart 0.1" ){
+chartADX <- function(  stock, cName="ADX Chart 0.1", endDate=Sys.Date(), startDate=Sys.Date()-90  ){
     #ADX values help traders identify the strongest and most profitable trends to trade. 
     #The values are also important for distinguishing between trending and non-trending 
     #conditions. Many traders will use ADX readings above 25 to suggest that the trend 
@@ -212,11 +212,12 @@ chartADX <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName=
         geom_vline(xintercept=adxSig$downtrend , linetype=2, colour="black")+
         ggtitle(cName) +
         xlab("Dates") + ylab("ADX") 
-    return( ggarrange(g1, g2, ncol=1, nrow=2 ) )
+    gall <- ggarrange(g1, g2, ncol=1, nrow=2 )
+    return( gall )
     
 }
 
-chartWPR <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="William %R Chart 0.1" ){
+chartWPR <- function( stock, cName="William %R Chart 0.1", endDate=Sys.Date(), startDate=Sys.Date()-90  ){
     stockW <- stockWPR( stock )
     stockDF <- zooToDataFrame(stock)
     stockDF$WPR <- stockW
@@ -244,7 +245,7 @@ chartWPR <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName=
     return(p12)
 }
 
-chartVolume <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="Volume Chart 0.1" ){
+chartVolume <- function( stock,  cName="Volume Chart 0.1", endDate=Sys.Date(), startDate=Sys.Date()-90 ){
     stockDF <- zooToDataFrame(stock)
     stockDF <- stockDF[ which( stockDF$Date >= startDate ),  ]
     stockDF <- stockDF[ which( stockDF$Date <= endDate ), ] 
