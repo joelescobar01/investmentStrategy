@@ -32,7 +32,7 @@ for(ii in seq_along(x) ){
   cpmData<-cbind( diff(log(Cl(sp500))), diff(log(Cl(stock)))) 
 
   
-  jpeg(filename, width = 1250, height = 900)
+  #jpeg(filename, width = 1250, height = 900)
   #print( plot1 <- ggplot(df) + aes(month, monthlyHighs, group = year, color = year) + geom_line() + ggtitle(title) ) 
   chart.Correlation(cpmData) 
   dev.off()

@@ -2,7 +2,7 @@ library(quantmod)
 library(TTR)
 library(ggpubr)
 library(tidyquant) 
-source("technicalIndicators.R") 
+#source("technicalIndicators.R") 
 source("chartTools.R")
 source("settings.R")
 source("momFunction.R")
@@ -10,50 +10,116 @@ source("bBandFunction.R")
 source("adxFunction.R")
 source("wprFunction.R")
 library(ggplot2)
-library('forecast')
+source("riskAnalysis.R")
 
-#chartVolatility <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MACD Chart 0.1" ){
-    #ohlc <- ttrc[,c("Open","High","Low","Close")]
-    #vClose <- volatility(ohlc, calc="close")
-    #vClose0 <- volatility(ohlc, calc="close", mean0=TRUE)
-    #vGK <- volatility(ohlc, calc="garman")
-    #vParkinson <- volatility(ohlc, calc="parkinson")
-    #vRS <- volatility(ohlc, calc="rogers")
-    getSymbols("CAT")
-    ohlc <- CAT[,c("CAT.Open","CAT.High","CAT.Low","CAT.Close")]
+chartVolatilityCloseToClose <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="Volatility Close Chart 0.1" ){
+    ohlc <- stock[,1:4]
     Close <- volatility(ohlc, calc="close")
     closeVolDF <- zooToDataFrame(Close)
-    colnames(closeVolDF) <- c("Date", "Volatility")
-    p1 <- ggplot( closeVolDF, aes(x=Date, y= Volatility )) +
+    colnames(closeVolDF) <- c("Volatility")
+    p1 <- ggplot( closeVolDF, aes(x=index(closeVolDF), y= Volatility )) +
         geom_line() + 
         labs( x="Close-to-Close")
-    vClose0 <- volatility(ohlc, calc="close", mean0=TRUE)
-    vClose0DF <- zooToDataFrame(vClose0)
-    colnames(vClose0DF) <- c("Date", "Volatility")
-    p2 <- ggplot( vClose0DF, aes(x=Date, y= Volatility )) +
-        geom_line() + 
-        labs( x="Garman and Klass")
-    vGK <- volatility(ohlc, calc="garman")
-    vGKDF <- zooToDataFrame(vGK)
-    colnames(vGKDF) <- c("Date", "Volatility")
-    p3 <- ggplot( vClose0DF, aes(x=Date, y= Volatility )) +
-        geom_line() + 
-        labs( x="OHLC Volatility")
-    vParkinson <- volatility(ohlc, calc="parkinson")
-    vParkinsonDF <- zooToDataFrame(vParkinson)
-    colnames(vParkinsonDF) <- c("Date", "Volatility")
-    p4 <- ggplot( vParkinsonDF, aes(x=Date, y= Volatility )) +
-        geom_line() + 
-        labs( x="Parkinson High-Low")
+    return(p1)
+}
+
+# chartVolatilityClose0 <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="Volatility Close Chart 0.1" ){
+#     ohlc <- stock[,1:4]
+#     vClose0 <- volatility(ohlc, calc="close", mean0=TRUE)
+#     vClose0DF <- zooToDataFrame(vClose0)
+#     colnames(vClose0DF) <- c("Date", "Volatility")
+#     p2 <- ggplot( vClose0DF, aes(x=Date, y= Volatility )) +
+#         geom_line() + 
+#         labs( x="Garman and Klass")
+# }
+# 
+# charVolatilityParkinson <- function(stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="Volatility Close Chart 0.1"){
+#     stock <- stock %>%
+#         adjustOHLC(use.Adjusted = TRUE)
+#     ohlc <- stock[,1:4]
+#     vParkinson <- volatility(ohlc, calc="parkinson")
+#     vParkinsonDF <- zooToDataFrame(vParkinson)
+#     colnames(vParkinsonDF) <- c("Date", "Volatility")
+#     p4 <- ggplot( vParkinsonDF, aes(x=Date, y= Volatility )) +
+#         geom_line() + 
+#         labs( x="Parkinson High-Low")
+# }
+# 
+# charVolatilityGK <- function(stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="Volatility Close Chart 0.1"){
+#     ohlc <- stock[,1:4]
+#     vGK <- volatility(ohlc, calc="garman")
+#  vGKDF <- zooToDataFrame(vGK)
+#  colnames(vGKDF) <- c("Date", "Volatility")
+#  p3 <- ggplot( vClose0DF, aes(x=Date, y= Volatility )) +
+#      geom_line() + 
+#      labs( x="OHLC Volatility")
+# }
+# 
+# charVolatilityGK <- function(stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="Volatility Close Chart 0.1"){
+#     ohlc <- stock[,1:4] 
+#     vRS <- volatility(ohlc, calc="rogers")
+#      vRSDF <- zooToDataFrame(vRS)
+#      colnames(vRSDF) <- c("Date", "Volatility")
+#      p5 <- ggplot( vRSDF, aes(x=Date, y= Volatility )) +
+#         geom_line() +
+#         labs( x="OHLC Rogers and Satchell")
+#}
+
+chartPriceSimulationMC <- function( price_sim ){
+    N     <- 252 # Number of Stock Price Simulations
+    M     <- 250  # Number of Monte Carlo Simulations
+    p1 <- 
+        price_sim %>%
+        ggplot(aes(x = Day, y = Stock.Price, Group = Simulation)) +
+        geom_line(alpha = 0.1) +
+        ggtitle(str_c("Random Walk: ", M,
+                      " Monte Carlo Simulations for Prices Over ", N,
+                      " Trading Days"))
+    return(p1)
+}
+chartReturnDistribution <- function( stock, plotTitle="Log Daily Returns" ){
     
-    vRS <- volatility(ohlc, calc="rogers")
-    vRSDF <- zooToDataFrame(vRS)
-    colnames(vRSDF) <- c("Date", "Volatility")
-    p5 <- ggplot( vRSDF, aes(x=Date, y= Volatility )) +
+    stockDailyReturns <- 
+          stockDailyLogReturns(stock)
+    volatilityMeasure <- 
+        stockDistributionMetric( stockDailyReturns )
+    p1 <- ggplot(dailyLogReturns, aes(x = Log.Returns)) + 
+        geom_histogram(aes(y = ..density..), bins=100) + 
+        geom_density() +
+        geom_rug(alpha = 0.5) +
+        geom_vline(xintercept = unname(volatilityMeasure), colour="red", linetype=2 )+
+        labs(title=symbols, y="Count", x="Daily Returns Log")
+    return(p1)
+}
+chartReturnRate <- function(dailyYield, plotTitle="Daily Return Rate"){
+    dailyRate <- cumprod(1+dailyYield)
+    p1 <- ggplot(dailyRate, aes(x = index(dailyRate), y=Rate)) +
         geom_line() +
-        labs( x="OHLC Rogers and Satchell")
+        labs(title = plotTitle, x = "Date", y ="Return") + 
+        theme_tq() +
+        labs(caption="Log Base")
+    return(p1)
+}
+
+chartExcessiveReturn <- function( riskFreeRate, stockRate , plotTitle="Excess Return" ){
+    p2 <- chartReturnRate(riskFreeRate, plotTitle="RiskFree Rate")
+    p3 <- chartReturnRate(stockRate)
+    riskFreeRate <- cumprod(1+riskFreeRate)
+    stockRate <- cumprod(1+stockRate)
+    p1 <- ggplot() + 
+        geom_line(data = riskFreeRate, aes(x = index(riskFreeRate), y = Rate, colour = "blue"), size=1) +
+        geom_line(data = stockRate, aes(x = index(stockRate), y = Rate, colour = "red"), size=1) +
+        xlab('Dates') +
+        ylab('Return' ) + 
+        labs(title="Excessive Return", caption="Stock 3 month return rate compared to a Risk Free Rate") + 
+        scale_color_discrete(name = "Return Rate", labels = c("T-Bill-3M", "stock"))
     
-    p12 <- ggarrange(p1, p2, p3, p4, p5 ,  ncol = 1, nrow = 5)
+    pall <- ggarrange(p1,                                                 # First row with scatter plot
+              ggarrange(p2, p3, ncol = 2 ), # Second row with box and dot plots
+              nrow = 2                               # Labels of the scatter plot
+    ) 
+    return(pall)
+}
 
 chartCandlesticks <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="MACD Chart 0.1" ){
     stockDF <- zooToDataFrame(stock)
@@ -61,7 +127,7 @@ chartCandlesticks <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-9
     g1 <- ggplot(stockDF, aes(x = Date , y = Close)) +
             geom_candlestick(aes(open = Open, high = High, low = Low, close = Close)) +
             geom_ma(ma_fun = SMA, n = 13, linetype = 5, size = 1.25) +  
-            labs(title = "Candlestick Chart", y = "Closing Price", x = "") + 
+            labs(title = "Candlestick Chart", y = "Closing Price", x = "", subtitle="13 Day Moving Average") + 
             #xlim(as.Date(c( startDate , endDate ))) +
             scale_x_date(   limits = as.Date(c( startDate, endDate )),
                             date_labels = "%m/%d") +
@@ -177,8 +243,10 @@ chartBBands <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cNa
 chartBBands2 <- function( stock, endDate=Sys.Date(), startDate=Sys.Date()-90, cName="BBands Chart 1.1" ){
     getBBAND <- stockBBands(stock)
     bbandDF <- zooToDataFrame(getBBAND)
-    print(bbandDF)
-    ggplot(stock, aes(x= index(stock), y= Cl(stock) ))
+    stockDF <- zooToDataFrame(stock)
+    print(stockDF)
+    ggplot(stockDF, aes(x=index(stockDF), y=Cl(stock) )) +
+        geom_line()
 }
 
 chartADX <- function(  stock, cName="ADX Chart 0.1", endDate=Sys.Date(), startDate=Sys.Date()-90  ){
@@ -254,5 +322,27 @@ chartVolume <- function( stock,  cName="Volume Chart 0.1", endDate=Sys.Date(), s
         geom_bar(stat="identity", fill="steelblue")+
         #geom_text(aes(label=len), vjust=-0.3, size=3.5)+
         theme_minimal()
+    return(g1)
+}
+
+chartSeasons <- function( stock,  cName="Season Chart 0.1", endDate=Sys.Date(), startDate=Sys.Date()-90 ){
+    #data.name <- stock
+    
+    print( paste("Starting: ", cName, sep="" ) )
+    monthlyHighs <- as.numeric(period.max(Hi(stock),endpoints(stock,on='months')))
+    df <- data.frame(date=index(monthlyReturn(stock)), value=coredata(monthlyHighs), row.names=NULL )
+    df$month <- factor(format(df$date, "%b"), levels = month.abb)
+    df$year <- format(df$date, "%Y")
+    title <- paste( "Monthly Highs for", cName )
+    #jpeg(filename, width = 1250, height = 900)
+    #print( plot1 <- ggplot(df) + aes(month, monthlyHighs, group = year, color = year) + geom_line() + ggtitle(title) ) 
+    print( paste("Completed: ", cName ))  
+    g1 <- ggplot(df, aes(x=month, y=monthlyHighs))  + 
+        geom_line( aes(group = year, color = year) ) + 
+        geom_point( aes(color=year)) + 
+        ggtitle( paste( "Monthly Closing Prices", cName )) + 
+        xlab("Months") + 
+        ylab("Closing Prices") + 
+        labs(color="Year") 
     return(g1)
 }

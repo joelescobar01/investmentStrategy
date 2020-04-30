@@ -2,7 +2,16 @@ library("quantmod")
 source('stockListConstant.R')
 source('charting.R')
 source("utils.R")
+source("riskAnalysis.R")
 require(ggplot2)
+
+generateCandlestickReport <- function (stock, symbol){
+  print( chartCandlesticks( stock, cName=symbol) )
+}
+
+generateSeasonReport <- function (stock, symbol ){
+  print( chartSeasons( stock, cName=symbol) )
+}
 
 generateRSIReport <- function( stock, symbol ){
   return( chartRSI(stock, cName=symbol) )
@@ -33,20 +42,46 @@ generateVolumeReport <- function( stock, symbol ){
   return( chartVolume(stock,cName=symbol) )
 }
 
+generateVolatilityReport <- function( stock, symbol ){
+  return( chartVolatilityCloseToClose(stock,cName=symbol) )
+}
+
+
+saveToFile <- function( filename, FUN , args){
+  print("Starting Report")
+  jpeg(filename, width = 1250, height = 1000)
+  do.call(FUN, args)
+  dev.off()
+}
+
 directory <- paste( getwd(), "research", format(Sys.time(), "%a_%b_%d_%Y"), sep="/" )
 
-generateReport <- function( stock, symbol, dir=directory ){
-  
+
+
+generateReport <- function( symbol, dir=directory ){
+  symbol <- toupper(symbol)
+  stock <- getStock( symbol ) 
+  if( is.na( stock ) ){
+    print( paste("Unable to get stock symbol:", symbol ) )
+    return(NA)
+  }
+   
   subdirectory <- paste(dir, symbol, "", sep="/" )
   dir.create(subdirectory, showWarnings = FALSE) 
   
   if(is.null(stock)) return(NA)                   # if data1 is still NULL go to next ticker
   
+  filename <- paste( subdirectory,"Candlesticks.jpg", sep="" )
+  print("Generating Candlestick Report")
+  jpeg(filename, width = 1250, height = 1000)
+  generateCandlestickReport(stock, symbol)
+  dev.off()
+  print("Completed Candlestick Report")
+  
   filename <- paste( subdirectory,"RSI.jpg", sep="" )
   jpeg(filename, width = 1250, height = 1000)
   generateRSIReport(stock, symbol)
-  if( dev.cur() != 1L )
-    dev.off()
+  dev.off()
   
   filename <- paste( subdirectory,"Momentum.jpg", sep="" )
   jpeg(filename, width = 1250, height = 1000)
