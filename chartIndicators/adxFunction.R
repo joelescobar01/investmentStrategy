@@ -1,6 +1,6 @@
 library(TTR)
-source("utils.R")
-source("settings.R")
+source("lib/utils.R")
+source("var/settings.R")
 #Sys.setnev(TZ="UTC")
 
 stockADX <- function( stock, dxCal=14  ){

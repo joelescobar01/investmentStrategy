@@ -1,4 +1,4 @@
-source("settings.R")
+source("var/settings.R")
 
 #create xts type dates 
 constructXtsDate <- function( date1, date2 ){

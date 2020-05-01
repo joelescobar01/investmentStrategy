@@ -1,4 +1,6 @@
 research/ 
 .RData 
 .Rhistory 
-*.bak 
+*.bak
+materialSector/
+thirdparty/ 

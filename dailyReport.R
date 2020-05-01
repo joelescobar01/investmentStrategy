@@ -1,55 +1,53 @@
-library("quantmod")
-source('stockListConstant.R')
-source('charting.R')
-source("utils.R")
-source("riskAnalysis.R")
-require(ggplot2)
+source('chartIndicators/charts.R')
+source("lib/utils.R")
+source("analysis/riskAnalysis.R")
 
 generateCandlestickReport <- function (stock, symbol){
-  print( chartCandlesticks( stock, cName=symbol) )
-}
-
-generateSeasonReport <- function (stock, symbol ){
-  print( chartSeasons( stock, cName=symbol) )
+  return( chartCandlesticks( stock, plotTitle=symbol) )
 }
 
 generateRSIReport <- function( stock, symbol ){
-  return( chartRSI(stock, cName=symbol) )
+  return( chartRSI(stock, plotTitle=symbol) )
 }
 
 generateMomentumReport <- function( stock, symbol ){
-  return( chartMomentum(stock, cName=symbol) ) 
+  return( chartMomentum(stock, plotTitle=symbol) ) 
 }
 
 
 generateBBandsReport <- function( stock, symbol  ){
-  return( chartBBands(stock, cName=symbol)  ) 
+  return( chartBBands2(stock, plotTitle=symbol)  ) 
 }
 
 generateMACDReport <- function( stock, symbol ){
-  return( chartMACD(stock, cName=symbol)  ) 
+  if( nrow(stock) < 26 ) 
+    return() 
+  return( chartMACD(stock, plotTitle=symbol)  ) 
 }
 
 generateADXReport <- function( stock, symbol  ){
-  return( chartADX(stock, cName=symbol) ) 
+  attempt(return( chartADX(stock, plotTitle=symbol) ), msg = "Nop !")
 }
 
 generateWPRReport <- function( stock, symbol  ){
-  return( chartWPR(stock, cName=symbol) )
+  return( chartWPR(stock, plotTitle=symbol) )
 }
 
 generateVolumeReport <- function( stock, symbol ){
-  return( chartVolume(stock,cName=symbol) )
+  return( chartVolume(stock,plotTitle=symbol) )
 }
 
 generateVolatilityReport <- function( stock, symbol ){
-  return( chartVolatilityCloseToClose(stock,cName=symbol) )
+  return( chartVolatilityCloseToClose(stock,plotTitle=symbol) )
 }
 
+generateSeasonReport <- function (stock, symbol ){
+  return( chartSeasons( stock, plotTitle=symbol) )
+}
 
 saveToFile <- function( filename, FUN , args){
   print("Starting Report")
-  jpeg(filename, width = 1250, height = 1000)
+  jpeg(filename, width = 1080, height = 720)
   do.call(FUN, args)
   dev.off()
 }
@@ -57,77 +55,165 @@ saveToFile <- function( filename, FUN , args){
 directory <- paste( getwd(), "research", format(Sys.time(), "%a_%b_%d_%Y"), sep="/" )
 
 
-
-generateReport <- function( symbol, dir=directory ){
+generateTest <- function( symbol, dir=directory ){
   symbol <- toupper(symbol)
-  stock <- getStock( symbol ) 
-  if( is.na( stock ) ){
-    print( paste("Unable to get stock symbol:", symbol ) )
-    return(NA)
-  }
-   
+  
   subdirectory <- paste(dir, symbol, "", sep="/" )
-  dir.create(subdirectory, showWarnings = FALSE) 
+  dir.create(subdirectory, showWarnings = FALSE)
   
-  if(is.null(stock)) return(NA)                   # if data1 is still NULL go to next ticker
-  
-  filename <- paste( subdirectory,"Candlesticks.jpg", sep="" )
-  print("Generating Candlestick Report")
-  jpeg(filename, width = 1250, height = 1000)
-  generateCandlestickReport(stock, symbol)
-  dev.off()
-  print("Completed Candlestick Report")
+  stock <- getStock( symbol)
+  stockDF <- convertStockToDataFrame(stock, symbol)
   
   filename <- paste( subdirectory,"RSI.jpg", sep="" )
-  jpeg(filename, width = 1250, height = 1000)
-  generateRSIReport(stock, symbol)
-  dev.off()
-  
-  filename <- paste( subdirectory,"Momentum.jpg", sep="" )
-  jpeg(filename, width = 1250, height = 1000)
-  generateMomentumReport(stock,symbol)
-  if( dev.cur() != 1L )
+  print(filename)
+  if(!file.exists(filename) ){
+    print("Generating RSI Report")
+    jpeg(filename, width = 1080, height = 720)
+    plot(generateRSIReport(stock, symbol))
     dev.off()
-  
-  filename <- paste( subdirectory,"BBands.jpg", sep="" )
-  jpeg(filename, width = 1250, height = 1000)
-  generateBBandsReport(stock,symbol)
-  if( dev.cur() != 1L )
-    dev.off()
-  
-  filename <- paste( subdirectory,"MACD.jpg", sep="" )
-  jpeg(filename, width = 1250, height = 1000)
-  generateMACDReport(stock,symbol)
-  if( dev.cur() != 1L )
-    dev.off()
-  
-  filename <- paste( subdirectory,"ADX.jpg", sep="" )
-  print("Starting ADX Report") 
-  jpeg(filename, width = 1250, height = 1000)
-  print( generateADXReport(stock,symbol) )
-  dev.off()
-  
-  
-  filename <- paste( subdirectory,"WPR.jpg", sep="" )
-  print("Starting WPR Report") 
-  jpeg(filename, width = 1250, height = 1000)
-  print( generateWPRReport(stock,symbol) ) 
-    dev.off()
-  
-  filename <- paste( subdirectory,"Volume.jpg", sep="" )
-  print("Starting Volume Report") 
-  jpeg(filename, width = 1250, height = 1000)
-  print( generateVolumeReport(stock,symbol) )
-    dev.off()
-  
+    if(file.exists(filename))
+      print("Finished RIS Report")    
+    else {
+      print("Had problem saving to file ")
+    }
+  }
 }
 
-generateMaterialsReport <- function( ){
-  dir.create( paste( directory, "/materials", sep=""), showWarnings = TRUE)
-  source("materialSectorList.R")
-  sym <- as.character( basic_symbols() )
-  for(ii in seq_along(sym)){
-    generateReport(ii, directory)
+generate3MReport <- function( symbol, dir=directory ){
+  symbol <- toupper(symbol)
+  
+  subdirectory <- paste(dir, symbol, "", sep="/" )
+  dir.create(subdirectory, showWarnings = FALSE)
+  
+  stock <- getStock( symbol, from="2019-08-04" )
+  stockDF <- convertStockToDataFrame(stock, symbol)
+  
+  
+  if( nrow(stockDF) < 26 )
+    return(NA)
+
+  
+  #subdirectory <- paste(dir, symbol, "", sep="/" )
+   
+
+  filename <- paste( subdirectory,"Candlesticks.jpg", sep="" )
+  if(!file.exists(filename) ){
+    print("Generating Candlestick Report")
+    jpeg(filename, width = 1080, height = 720)
+    plot(generateCandlestickReport(stockDF, symbol))
+    dev.off()
+    if(file.exists(filename))
+      print("Finished Report")    
+    else {
+      print("Had problem saving to file ")
+    }    
+  }
+
+  
+  filename <- paste( subdirectory,"RSI.jpg", sep="" )
+  if(!file.exists(filename) ){
+    print("Generating RSI Report")
+    jpeg(filename, width = 1080, height = 720)
+    plot(generateRSIReport(stock, symbol))
+    dev.off(  )
+    if(file.exists(filename))
+      print("Finished Report")    
+    else {
+      print("Had problem saving to file ")
+    }
+  }
+  
+  if(dev.cur() > 1)
+    dev.off()
+  
+  filename <- paste( subdirectory,"Momentum.jpg", sep="" )
+  if(!file.exists(filename) ){
+    jpeg(filename, width = 1080, height = 720)
+    plot(generateMomentumReport(stock,symbol))
+    dev.off()
+    if(file.exists(filename))
+      print("Finished Report")    
+    else {
+      print("Had problem saving to file ")
+    }
+  }
+   
+  filename <- paste( subdirectory,"BBands.jpg", sep="" )
+  if(!file.exists(filename) ){ 
+    jpeg(filename, width = 1080, height = 720)
+    plot(generateBBandsReport(stock,symbol))
+    dev.off()
+    if(file.exists(filename))
+      print("Finished Report")    
+    else {
+      print("Had problem saving to file ")
+    }
+  }
+       
+  filename <- paste( subdirectory,"MACD.jpg", sep="" )
+  if(!file.exists(filename) ){
+    jpeg(filename, width = 1080, height = 720)
+    plot(generateMACDReport(stockDF,symbol))
+    dev.off()
+    if(file.exists(filename))
+      print("Finished Report")    
+    else {
+      print("Had problem saving to file ")
+    }
+  }
+  
+  
+  filename <- paste( subdirectory,"ADX.jpg", sep="" )
+  if(!file.exists(filename) ){
+    print("Starting ADX Report") 
+    jpeg(filename, width = 1080, height = 720)
+    plot(generateADXReport(stock,symbol))
+    dev.off()
+    if(file.exists(filename))
+      print("Finished Report")    
+    else {
+      print("Had problem saving to file ")
+    }
+  }
+  
+  filename <- paste( subdirectory,"WPR.jpg", sep="" )
+  if(!file.exists(filename) ){
+    print("Starting WPR Report") 
+    jpeg(filename, width = 1080, height = 720)
+    plot(generateWPRReport(stockDF,symbol)  )
+    dev.off()
+    if(file.exists(filename))
+      print("Finished Report")    
+    else {
+      print("Had problem saving to file ")
+    }
+  }
+  # 
+   filename <- paste( subdirectory,"Volume.jpg", sep="" )
+   if(!file.exists(filename) ){
+     print("Starting Volume Report") 
+     jpeg(filename, width = 1080, height = 720)
+     plot(generateVolumeReport(stockDF,symbol) )
+     dev.off()
+     if(file.exists(filename))
+       print("Finished Report")    
+     else {
+       print("Had problem saving to file ")
+     }
+   }
+  # 
+}
+
+generateMaterialsReport <- function( symbols=basic_symbols() ){
+  source('var/materialSectorList.R')
+  dir.create( paste( directory, "/materials", sep=""), showWarnings = FALSE)
+  #sym <- as.character( basic_symbols() )
+  for(ii in seq_along(symbols)){
+    print( paste("Starting Report on:", symbols[ii]) )
+    tryCatch( 
+        generate3MReport(symbols[ii], directory ), 
+        error=function(e){})      # empty function for error handling
+    print( paste("Completed Report on:", symbols[ii]) )
   }
 }
 

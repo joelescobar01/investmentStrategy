@@ -3,11 +3,12 @@ library(plotly)
 library(ggplot2)
 library(PerformanceAnalytics)
 
-getStock <- function(symbol){
+getStock <- function(symbol, ...){
   data1 <- NULL                               # NULL data1
   data1 <- tryCatch(getSymbols(Symbols = toupper(symbol),  
                                src = "yahoo", 
-                               auto.assign = FALSE),
+                               auto.assign = FALSE, 
+                               ... ),
                     error=function(e){})      # empty function for error handling
   if(is.null(data1)) return(NA) 
   # if data1 is still NULL go to next ticker             # if data1 is still NULL go to next ticker  
@@ -36,13 +37,24 @@ dataFrameColLag <- function( colA, colB, lag=1 ){
 }
 
 convertStockToDataFrame <- function( stock, name ){
-  dat <- as.data.frame(coredata(stock),row.names=1 )
-  dat$date <- index(stock)
-  dat <- subset(dat, date >= first( index(stock)) )
+  dat <- data.frame(Date=as.Date(index(stock)), stock, check.names=FALSE, row.names=1)
+  dat$Date <- index(stock)
+  #dat <- subset(dat, date >= first( index(stock)) )
   
   str <- sprintf("^%s\\.", name)
   names(dat) <- sub(str, "", names(dat))
   return( dat )
+}
+
+zooToDataFrame <- function( xtsObj, colPrefix=NA ){
+  dat <- data.frame(Date=as.Date(index(xtsObj)),xtsObj, check.names=FALSE, row.names=1)
+  #dat$Date <- as.Date(index(xtsObj))
+  
+  if( !is.na(colPrefix) ){
+    str <- sprintf("^%s\\.", colPrefix)
+    names(dat) <- sub(str, "", names(dat))
+  }
+  return(dat)
 }
 
 dfToTimeSeries <- function( dataFrame, indexCol=ncol(dataFrame) ){
@@ -66,9 +78,7 @@ numberParity <- function( num ){
     return(indicator) 
 }
 
-zooToDataFrame <- function( xtsObj ){
-     return( data.frame(Date=as.Date(index(xtsObj)), xtsObj, check.names=FALSE, row.names=1) )
-}
+
 
 exportStockCSV <- function(stock, filename){
     x<-data.frame(stock)

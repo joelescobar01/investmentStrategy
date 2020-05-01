@@ -1,16 +1,20 @@
 library(TTR)
-source("utils.R")
-source("settings.R")
-#Sys.setnev(TZ="UTC")
+source("lib/utils.R")
+source("var/settings.R")
 
-stockSmaRSI <- function( stock, pastDays=14 ){
-    rsi <- RSI(Cl(stock), SMA, n=pastDays)
-    return( na.omit(rsi)) 
+stockSmaRSI <- function( stockDF, pastDays=14 ){
+    rsi <- 
+        RSI(Cl(stockDF), 
+            SMA, n=pastDays)
+    return( rsi) 
 }
-stockEmaRSI <- function( stock, pastDays=14 ){
+stockEmaRSI <- function( stockDF, pastDays=14 ){
     
-    rsi <- RSI(Cl(stock), EMA, n=pastDays)
-    return( na.omit(rsi)) 
+    rsi <- 
+        RSI(Cl(stockDF), 
+            EMA, 
+                n=pastDays)
+    return( rsi) 
 }
 
 rsiSetup <- function(rsiDataFrame){

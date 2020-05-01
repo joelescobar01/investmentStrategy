@@ -1,7 +1,7 @@
 require(quantmod)
 require(PerformanceAnalytics)
-source("utils.R")
-source("charting.R")
+source("lib/utils.R")
+source("chartIndicators/charts.R")
 require(forecast)
 require(purrr)
 require(tibble)
@@ -22,12 +22,12 @@ stockDailyLogReturns <- function ( stock ){
 }
 stockDistributionMetric <- function( stockDailyLogReturn ){
   #probs <- c(.005, .025, .05, .25, .5, .75, .975, .995)
-  dist_log_returns <- stockDailyReturn %>% 
+  dist_log_returns <- stockDailyLogReturn %>% 
     quantile(probs = probs, na.rm = TRUE)
   return( dist_log_returns )
 }
 stockAvgDailyReturnRate <- function( stock ){
-  dailyLogReturns <- historicStockDailyReturns(stock)  
+  dailyLogReturns <- stockDailyLogReturns(stock)  
   mean_log_returns <- mean(dailyLogReturns, na.rm = TRUE)
 #  sd_log_returns <- sd(dailyLogReturns, na.rm = TRUE)
   #On average, the mean daily return 
@@ -99,7 +99,7 @@ priceSimulationMC <- function( stock ){
     adjustOHLC(use.Adjusted=TRUE )
   
   price_init <- last(stock) 
-  dailyLogReturns <- historicStockDailyReturns(stock)  
+  dailyLogReturns <- stockDailyLogReturns(stock)  
   mean_log_returns <- mean(dailyLogReturns, na.rm = TRUE)
   sd_log_returns <- sd(dailyLogReturns, na.rm = TRUE)
   
@@ -108,8 +108,8 @@ priceSimulationMC <- function( stock ){
   mu    <- mean_log_returns
   sigma <- sd_log_returns
   day <- 1:N
-  #price_init <- stock$CAT.Adjusted[[nrow(stock$CAT.Adjusted)]]
   # Simulate prices
+  #price_init <- stock$CAT.Adjusted[[nrow(stock$CAT.Adjusted)]]
   set.seed(123)
   monte_carlo_mat <- matrix(nrow = N, ncol = M)
   for (j in 1:M) {
@@ -118,6 +118,32 @@ priceSimulationMC <- function( stock ){
       monte_carlo_mat[[i, j]] <- monte_carlo_mat[[i - 1, j]] * exp(rnorm(1, mu, sigma))
     }
   }
+ 
+  # Format and organize data frame
+  price_sim <- cbind(day, monte_carlo_mat) %>%
+    as_tibble() 
+  nm <- str_c("Sim.", seq(1, M))
+  nm <- c("Day", nm)
+  names(price_sim) <- nm
+  price_sim <- price_sim %>%
+    gather(key = "Simulation", value = "Stock.Price", -(Day))
+  end_stock_prices <- price_sim %>% 
+    filter(Day == max(Day))
+  probs <- c(.005, .025, .25, .5, .75, .975, .995)
+  dist_end_stock_prices <- quantile(end_stock_prices$Stock.Price, probs = probs)
+  dist_end_stock_prices %>% round(2)
+  
+  # Inputs
+  N_hist          <- nrow(stock) / 252
+  p_start_hist    <- first(Ad(stock))
+  p_end_hist      <-last(Ad(stock))
+  N_sim           <- N / 252
+  p_start_sim     <- p_end_hist
+  p_end_sim       <- dist_end_stock_prices[[4]]
+  # CAGR calculations
+  CAGR_historical <- (p_end_hist / p_start_hist) ^ (1 / N_hist) - 1
+  CAGR_sim        <- (p_end_sim / p_start_sim) ^ (1 / N_sim) - 1
+   
   # Format and organize data frame
   price_sim <- cbind(day, monte_carlo_mat) %>%
     as_tibble()
@@ -126,7 +152,15 @@ priceSimulationMC <- function( stock ){
   names(price_sim) <- nm
   price_sim <- price_sim %>%
     gather(key = "Simulation", value = "Stock.Price", -(Day))
+  
+  startDate <- paste( "Using data since", first( index(stock), "to simulate" ))
+  capt <- paste("Historical Annual Growth: ", CAGR_historical, "% Simulated Annual Growth: ", CAGR_sim, "%" )
   # Visualize simulation
+  p <- chartPriceSimulationMC(price_sim, caption=capt) +
+    labs( caption=capt, subtitle = startDate, y="Stock Price" )
+  
+  plot(p)
+  
   return(price_sim)   
 }
 

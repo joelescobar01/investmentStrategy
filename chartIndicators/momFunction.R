@@ -1,12 +1,13 @@
 library(TTR)
-source("utils.R")
-source("settings.R")
+source("lib/utils.R")
+source("var/settings.R")
+
 #Sys.setnev(TZ="UTC")
 
 stockMomentum <- function( stock, pastDays=2 ){
     mom <- momentum(Cl(stock), n=pastDays)
     colnames(mom)[1] <- "momentum"
-    return( na.omit(mom)) 
+    return(mom) 
 }
 
 momentumParity <- function( momentumDF ){

@@ -1,7 +1,6 @@
 library(TTR)
-source("utils.R")
-source("settings.R")
-#Sys.setnev(TZ="UTC")
+source("lib/utils.R")
+source("var/settings.R")
 
 stockWPR <- function( stock, lookbackPeriod =  14 ){
   #where it is greater 1 if it is above the upper band, and less than 0 when it is below the lower band
