@@ -35,7 +35,7 @@ generate.BBands.Report <- function( stockTbbl ){
     stockTbbl %>% 
     bband.Interface()  
 
-    return( chart.BBAND( bbandTbl, symbo )) 
+    return( chart.BBAND( bbandTbl, symbol )) 
 
 }
 
@@ -43,8 +43,14 @@ generateMACDReport <- function( stock, symbol ){
   return( chartMACD(stock, plotTitle=symbol)  ) 
 }
 
-generate.MACD.Report <- function( stockTbbl, symbol,
-                                  startDate=NULL, endDate=NULL ){
+generate.MACD.Report <- function( stockTbbl, startDate=NULL, endDate=NULL ){
+  
+  symbol<- 
+    stockTbbl %>% 
+    select(symbol) %>%
+    first() 
+
+
   macdTb <- 
     stockTbbl %>%
     macd.Interface() 
@@ -113,9 +119,8 @@ generate3MReport <- function( symbol, dir=directory ){
   
   stock <- getStock( symbol, from="2019-08-04" )
   stockDF <- convertStockToDataFrame(stock, symbol)
-  stockTb <- tq_get( symbol, get="stock.prices" ) 
-
-
+  stockTb <- tq_get( symbol, get="stock.prices",
+                    from=Sys.Date()-120 ) 
   
   if( nrow(stockDF) < 26 )
     return(NA)
@@ -174,7 +179,8 @@ generate3MReport <- function( symbol, dir=directory ){
   filename <- paste( subdirectory,"BBands.jpg", sep="" )
   if(!file.exists(filename) ){ 
     jpeg(filename, width = 1080, height = 720)
-    plot(generateBBandsReport(stock,symbol))
+    #plot(generateBBandsReport(stock))
+    plot(generate.BBands.Report(stockTb))
     dev.off()
     if(file.exists(filename))
       print("Finished Report")    
@@ -186,7 +192,8 @@ generate3MReport <- function( symbol, dir=directory ){
   filename <- paste( subdirectory,"MACD.jpg", sep="" )
   if(!file.exists(filename) ){
     jpeg(filename, width = 1080, height = 720)
-    plot(generateMACDReport(stockDF,symbol))
+    #plot(generateMACDReport(stockDF,symbol))
+    plot(generate.MACD.Report(stockTb))
     dev.off()
     if(file.exists(filename))
       print("Finished Report")    
@@ -196,18 +203,18 @@ generate3MReport <- function( symbol, dir=directory ){
   }
   
   
-  filename <- paste( subdirectory,"ADX.jpg", sep="" )
-  if(!file.exists(filename) ){
-    print("Starting ADX Report") 
-    jpeg(filename, width = 1080, height = 720)
-    plot(generateADXReport(stock,symbol))
-    dev.off()
-    if(file.exists(filename))
-      print("Finished Report")    
-    else {
-      print("Had problem saving to file ")
-    }
-  }
+  #filename <- paste( subdirectory,"ADX.jpg", sep="" )
+  #if(!file.exists(filename) ){
+  #  print("Starting ADX Report") 
+  #  jpeg(filename, width = 1080, height = 720)
+  #  plot(generateADXReport(stock,symbol))
+  #  dev.off()
+  #  if(file.exists(filename))
+  #    print("Finished Report")    
+  #  else {
+  #    print("Had problem saving to file ")
+  #  }
+  #}
   
   filename <- paste( subdirectory,"WPR.jpg", sep="" )
   if(!file.exists(filename) ){

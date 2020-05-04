@@ -44,8 +44,7 @@ macd.Interface <- function( stockTbbl, startDate=NA,
 get.MACD <- function(stockTbbl, fast=3, slow=10, signal=16 ){
   stockMACDTbbl <- 
     stockTbbl %>%
-      group_by(symbol) %>% 
-      tq_mutate(select     = close, 
+      tq_mutate(select     = adjusted, 
                 mutate_fun = MACD, 
                 nFast      = 3, 
                 nSlow      = 10, 

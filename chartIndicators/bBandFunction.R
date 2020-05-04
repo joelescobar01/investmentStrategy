@@ -15,12 +15,12 @@ get.BBAND <- function(stockTbbl, lookbackDays=2, volatility=2, type="SMA" ){
   #BBands(HLC, _n = 2, _maType="SMA", _sd = 2, ...)
   stockBBandTbbl <- 
     stockTbbl %>%
-      group_by(symbol) %>% 
       tq_transmute( select = adjusted, 
                     mutate_fun = BBands, 
                     n = lookbackDays, 
                     sd = volatility,
                     maType=type) %>%
+      mutate(symbol= stockTbbl$symbol%>%first()) %>%
       drop_na() 
 
   return( stockBBandTbbl )  
@@ -122,14 +122,13 @@ bbandSellXValues <- function( sellDates, startdate ){
 
 chart.BBAND <- function( bbandTbl, doubleBand=FALSE ){
 
-  p <-  ggplot(bbandTbl) + 
+  p <-  ggplot(bbandTbl ,aes(x=date)) + 
       geom_line(aes( y=mavg, x=as.Date(date), colour = "SMA"))+
       geom_ribbon(aes(ymin=dn, ymax=up, x=as.Date(date), 
                       fill = "2 SD"), alpha = 0.3) +
       scale_colour_manual("",values="blue")+
-      scale_fill_manual("",values="grey12")+
-      scale_x_date(date_labels = "%b %d",
-                   date_minor_breaks = "1 day") +
-      labs( x="Date", y="Price", title=bbandTbl %>% select(symbol) %>% first() )
+      scale_fill_manual("",values="red")+
+      labs( x="Date", y="Price", title=bbandTbl %>% select(symbol) %>% first() ) +
+      theme_gray()
   return(p)
 }
