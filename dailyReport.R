@@ -1,6 +1,14 @@
 source('chartIndicators/charts.R')
+source('chartIndicators/macdFunction.R')
+source('chartIndicators/bBandFunction.R')
 source("lib/utils.R")
 source("analysis/riskAnalysis.R")
+source("chartIndicators/candlestickPatternIdentifier.R") 
+
+
+generateCandleStickPatterns <- function( stock ){
+  return( tenDayCandlePattern(stock) )
+}
 
 generateCandlestickReport <- function (stock, symbol){
   return( chartCandlesticks( stock, plotTitle=symbol) )
@@ -19,14 +27,31 @@ generateBBandsReport <- function( stock, symbol  ){
   return( chartBBands2(stock, plotTitle=symbol)  ) 
 }
 
+generate.BBands.Report <- function( stockTbbl ){
+  symbol <-
+    stockTbbl %>% select(symbol) %>% slice(1) %>% pull() 
+
+  bbandTbl <- 
+    stockTbbl %>% 
+    bband.Interface()  
+
+    return( chart.BBAND( bbandTbl, symbo )) 
+
+}
+
 generateMACDReport <- function( stock, symbol ){
-  if( nrow(stock) < 26 ) 
-    return() 
   return( chartMACD(stock, plotTitle=symbol)  ) 
 }
 
+generate.MACD.Report <- function( stockTbbl, symbol,
+                                  startDate=NULL, endDate=NULL ){
+  macdTb <- 
+    stockTbbl %>%
+    macd.Interface() 
+    return( chart.MACD( macdTb, plotTitle=symbol)  ) 
+}
 generateADXReport <- function( stock, symbol  ){
-  attempt(return( chartADX(stock, plotTitle=symbol) ), msg = "Nop !")
+  return( chartADX(stock, plotTitle=symbol) )
 }
 
 generateWPRReport <- function( stock, symbol  ){
@@ -63,7 +88,8 @@ generateTest <- function( symbol, dir=directory ){
   
   stock <- getStock( symbol)
   stockDF <- convertStockToDataFrame(stock, symbol)
-  
+  stockTb <- tq_get( symbol, get="stock.prices" ) 
+
   filename <- paste( subdirectory,"RSI.jpg", sep="" )
   print(filename)
   if(!file.exists(filename) ){
@@ -87,14 +113,21 @@ generate3MReport <- function( symbol, dir=directory ){
   
   stock <- getStock( symbol, from="2019-08-04" )
   stockDF <- convertStockToDataFrame(stock, symbol)
-  
+  stockTb <- tq_get( symbol, get="stock.prices" ) 
+
+
   
   if( nrow(stockDF) < 26 )
     return(NA)
 
   
   #subdirectory <- paste(dir, symbol, "", sep="/" )
-   
+  
+
+  filename <- paste( subdirectory,"CandlestickPatterns.csv", sep="" )
+  print("Generating CandlestickPatterns")
+  tmp <- generateCandleStickPatterns(stock)
+  write.csv( tmp, filename )
 
   filename <- paste( subdirectory,"Candlesticks.jpg", sep="" )
   if(!file.exists(filename) ){
@@ -210,10 +243,8 @@ generateMaterialsReport <- function( symbols=basic_symbols() ){
   #sym <- as.character( basic_symbols() )
   for(ii in seq_along(symbols)){
     print( paste("Starting Report on:", symbols[ii]) )
-    tryCatch( 
-        generate3MReport(symbols[ii], directory ), 
-        error=function(e){})      # empty function for error handling
-    print( paste("Completed Report on:", symbols[ii]) )
+        generate3MReport(symbols[ii], directory )
+
   }
 }
 

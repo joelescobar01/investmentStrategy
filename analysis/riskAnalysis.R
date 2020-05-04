@@ -1,7 +1,6 @@
 require(quantmod)
 require(PerformanceAnalytics)
-source("lib/utils.R")
-source("chartIndicators/charts.R")
+#source("../lib/utils.R")
 require(forecast)
 require(purrr)
 require(tibble)
@@ -20,40 +19,125 @@ stockDailyLogReturns <- function ( stock ){
   names( dailyLogReturns ) <- c("Log.Returns")
   return(dailyLogReturns)
 }
-stockDistributionMetric <- function( stockDailyLogReturn ){
-  #probs <- c(.005, .025, .05, .25, .5, .75, .975, .995)
-  dist_log_returns <- stockDailyLogReturn %>% 
+
+stockDailyLogReturnsTbbl <- function ( stockTbbl ){
+  dailyLogReturnsTbbl <- 
+    stockTbbl %>% 
+    tq_transmute(adjusted, 
+                 mutate_fun = periodReturn, 
+                 period = 'daily', 
+                 type='log' )
+  return(dailyLogReturnsTbbl)
+}
+
+mutateDailyLogReturnsTbbl <- function ( stockTbbl ){
+  dailyLogReturnsV <- 
+    stockTbbl %>% 
+    tq_transmute(adjusted, 
+                 mutate_fun = periodReturn, 
+                 period = 'daily', 
+                 type='log' ) %>%
+    pull(daily.returns)
+  stockTbbl <- 
+    stockTbbl %>%
+    add_column( Log.Returns = dailyLogReturnsV )
+  return(stockTbbl )
+}
+
+stockSumVolatility <- function( stockTb, n=9 ){
+  stockTb <- 
+    stockTb %>% mutate( daily.returns = c(0,diff( log(close))))
+  
+  dailyReturns <- stockTb$daily.returns 
+  
+  vol <- c()
+  beta <- c() 
+  vol[1:(n-1)] <- NA
+  beta[1:(n-1)] <- NA
+  vol[n]<- sd(dailyReturns[1:n])
+  for (i in (n+1):length(dailyReturns)){
+    vol[i]<- sd(dailyReturns[(i-n):i])
+  }
+  stockTb <- 
+    stockTb %>% 
+    add_column(nDayVolatility = vol)
+  #stockTb$nDayCumSumVol <- vol 
+  return(stockTb)
+}
+
+changeRateInVolatility <- function( stockTb, n=9 ){
+  deltaVol <- c()
+  histVolatility <- 
+    stockTb %>% 
+    select(nDayVolatility) %>% 
+    pull() 
+  deltaVol[1:(n*2-1)] <- NA
+  deltaVol[n*2]<- sd(histVolatility[n:n*2])
+  for (i in (n*2+1):length(histVolatility)){
+    currentDay<- histVolatility[i]
+    pastDays<- sum( histVolatility[(i-n):i] )
+    deltaVol[i] <- currentDay/pastDays 
+  }
+  stockTb$deltaVolatility <- deltaVol  
+  return( stockTb )
+}
+
+myEMA <- function (stocktb,n){
+  price <- 
+    stocktb %>%
+    select(close) %>%
+    pull() 
+  betaV <- 
+    stocktb %>% 
+    select(deltaVolatility) %>% 
+    pull 
+  ema <- c()
+  ema[1:(n-1)] <- NA
+  ema[n]<- mean(price[1:n])
+  for (i in (n+1):length(price)){
+    beta <- betaV[i] 
+    ema[i]<-beta * price[i] + 
+      (1-beta) * ema[i-1]
+  }
+  ema <- reclass(ema,price)
+  return(ema)
+}
+
+stockDistributionMetricTbbl <- function( stockDailyLogReturnTbbl ){
+  probs <- c(.005, .025, .05, .25, .5, .75, .975, .995)
+  dist_log_returns <- 
+    stockDailyLogReturnTbbl %>% 
+    pull(daily.returns) %>%
     quantile(probs = probs, na.rm = TRUE)
   return( dist_log_returns )
 }
-stockAvgDailyReturnRate <- function( stock ){
-  dailyLogReturns <- stockDailyLogReturns(stock)  
-  mean_log_returns <- mean(dailyLogReturns, na.rm = TRUE)
-#  sd_log_returns <- sd(dailyLogReturns, na.rm = TRUE)
-  #On average, the mean daily return 
-  dailyReturnP <- 
-    mean_log_returns %>% 
-    exp() 
+stockAvgDailyReturnRateTbbl <- function( stockDailyLogReturnTbbl ){
+  avgDailyReturn <- stockDailyLogReturnTbbl %>% 
+    pull(daily.returns) %>% 
+    mean(na.rm=TRUE) %>% exp() 
+  #On average, the mean daily return is avgDailyReturn-1 more than the 
+  ## previous day’s price. Doesn’t sound like much, but it compounds daily at an exponential rate
   # #On average, the mean daily return
   # #but it compounds daily at an exponential rate.
-  return( dailyReturnP ) #returns in percentage 
+  return( avgDailyReturn ) #returns in percentage 
 }
 
-tbill3MDailyRate <- function( ){
+
+
+tbill3MDailyRate <- function(  ){
   tbillLogRate <- 
-    getSymbols( "DGS3MO", 
-                src='FRED', 
-                auto.assign = FALSE )
+    tq_get( "DGS3MO", 
+           get="economic.data" ) %>%
+    drop_na() 
+  #tbillLogRate <- tbillLogRate[!is.infinite(rowSums(tbillLogRate)),] 
+  #tbillLogRate <- na.omit( tbillLogRate )
   
-  tbillLogRate <- tbillLogRate[!is.infinite(rowSums(tbillLogRate)),] 
-  tbillLogRate <- na.omit( tbillLogRate )
-  
-  tbillLogRate <- 
-    tail( tbillLogRate, n=92 )
-  colnames(tbillLogRate) <- c( "Rate")
-  tbillDF <- zooToDataFrame(tbillLogRate)
-  
-  return(tbillLogRate)
+  #tbillLogRate <- 
+  #  tail( tbillLogRate, n=92 )
+  #colnames(tbillLogRate) <- c( "Rate")
+  #tbillDF <- zooToDataFrame(tbillLogRate)
+  #
+  #return(tbillLogRate)
 }
 
 tbill3MDailyLogtRate <- function( ){
@@ -72,6 +156,58 @@ tbill3MDailyLogtRate <- function( ){
   tbillDF <- convertStockToDataFrame(tbillLogRate)
   
   return(tbillLogRate)
+}
+
+simpleRatesTbbl <- function( stockTbbl ){
+  nDays <-
+    stockTbbl %>%
+    select(adjusted) %>%
+    count() 
+
+  simpleRates <-
+    stockTbbl %>%
+    pull(adjusted) %>%
+    diff() 
+  
+  return( simpleRates/nDays ) 
+}
+
+compoundReturnsTbbl <- function( stockTbbl, nDaysBackStart=90, nDaysBackEnd=0 ) {
+  # rt the continuously compounded return at moment t
+  # Rt simple return 
+  # rt = ln(1+Rt) 
+  # Pt is the price at the moment 
+  # Pt-1 is the price a day prior 
+  # rt = ln(Pt/Pt-1) 
+  # ln(Pt/Pt-1) = ln(Pt) - ln(Pt-1)
+  lastDate <- 
+    stockTbbl %>%
+    slice(n()) %>% 
+    pull(date) %>%
+    as.Date() - nDaysBackEnd 
+
+  firstDate <- 
+    as.Date( lastDate - nDaysBackStart ) 
+
+  stockTbbl <- 
+    stockTbbl %>% 
+    filter( date >= firstDate, date <= lastDate )
+
+  compoundReturn <- 
+    stockTbbl %>% 
+    pull(adjusted) %>% 
+    log() %>% 
+    diff() 
+
+  return(compoundReturn) 
+
+}
+
+getStockTbbl <- function( stockSymbolChar, ... ){
+  stockTbbl <- tq_get( toupper(stockSymbolChar),
+                        get="stock.prices",
+                        ... )
+  return(stockTbbl) 
 }
 
 week13Rates <- function( dailyRate ){
@@ -190,26 +326,4 @@ getSP500Sector <- function( sp_500, Sector ){
   return(sector)
 }
 
-chartSP500SectorReturnDistribution <- function( sp_500Sector ){
-  sp500 <- sp500ListWebScrape()
-  sp500Material <- getSP500Sector( sp500, "Materials" ) 
-  symbols <-
-    sp500Material %>%
-    select(symbol) %>% 
-    pull() 
-  for(ii in seq_along(symbols)){
-    stockRe <- getStock(symbols[ii])
-    annualReturn <- stock %>%
-    as_tibble() %>%
-    rownames_to_column(var="Date") %>%
-    mutate( Date = as.Date(index(stockRe)) ) %>% 
-    mutate( Log.Returns = coredata( periodReturn(stockRe, period='daily', type='log') ) )
-    names(annualReturn ) <- c("Date", "Open", "High", "Low", "Close", "Volume", "Adusted", "Log.Returns" ) 
-    
-    volatilityMeasure <- 
-      annualReturn %>% 
-      select(Log.Returns) %>%
-      stockVolatilityDailyMeasure( )    
-  }
-}
-
+## get the last row of tibble %>% slice(n()) 

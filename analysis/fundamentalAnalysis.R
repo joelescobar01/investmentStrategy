@@ -1,6 +1,6 @@
 library(rvest)
 library(dplyr)
-source("utils.R") 
+#source("utils.R") 
 
 cnbcWebPageURL <- "https://www.cnbc.com/quotes/?symbol=AGFS&qsearchterm=AGFS&tab=financials"
 
@@ -26,9 +26,9 @@ retrieveRevenueTable <- function( symbol ){
     #revenueTable <- apply(revenueTable, 2, function(x) gsub("-$", NA, x))  #remove Emtpy cells 
     revenueTable <- as.data.frame( apply( revenueTable[, 1:6] ,2, function(x) gsub("\\r\\s+ ", "", x) ) ) #Clean data 
     revenueTable <- as.data.frame(apply(revenueTable,2,function(x)gsub('\\s+', '',x)))
-    filename <- paste( "~/Documents/stocks/research/w4_26_Report/", toupper(symbol), "/RevenueTable.csv", sep="" )
+    #filename <- paste( "~/Documents/stocks/research/w4_26_Report/", toupper(symbol), "/RevenueTable.csv", sep="" )
     print(revenueTable)
-    write.csv(revenueTable, filename , row.names = FALSE)
+    #write.csv(revenueTable, filename , row.names = FALSE)
 }
 retrieveSGATable <- function( symbol ){
   urlPath <- paste( marketWatchWebPageURL, marketWatchWebPagePath, tolower(symbol), marketWatchWebPageQuery, sep="/")
@@ -59,7 +59,7 @@ retrieveRevenueTable <- function( symbol ){
   revenueTable <- as.data.frame(apply(revenueTable,2,function(x)gsub('\\s+', '',x)))
   filename <- paste( "~/Documents/stocks/research/w4_26_Report/", toupper(symbol), "/RevenueTable.csv", sep="" )
   print(revenueTable)
-  write.csv(revenueTable, filename , row.names = FALSE)
+  #write.csv(revenueTable, filename , row.names = FALSE)
 }
 
 #retrievetotalAssetTable <- function(symbol){
@@ -77,7 +77,7 @@ retrievetotalAssetTable <- function( symbol ){
     totalAssetTable <- as.data.frame(apply(totalAssetTable,2,function(x)gsub('\\s+', '',x)))
     filename <- paste( "~/Documents/stocks/research/w4_26_Report/", toupper(symbol), "/totalAssetsTable.csv", sep="" )
     print(totalAssetTable)
-    write.csv(totalAssetTable, filename , row.names = FALSE)
+    #write.csv(totalAssetTable, filename , row.names = FALSE)
 }
 
 #totaltotalAssets
@@ -95,7 +95,7 @@ retrieveTotalAssetTable <- function( symbol ){
   totalAssetTable <- as.data.frame(apply(totalAssetTable,2,function(x)gsub('\\s+', '',x)))
   filename <- paste( "~/Documents/stocks/research/w4_26_Report/", toupper('asix'), "/totalAssetsTable.csv", sep="" )
   print(totalAssetTable)
-  write.csv(totalAssetTable, filename , row.names = FALSE)
+  #write.csv(totalAssetTable, filename , row.names = FALSE)
 }
 
 retrievecashFlowTable <- function( symbol, colNum ){
@@ -112,7 +112,7 @@ retrievecashFlowTable <- function( symbol, colNum ){
   cashFlowTable <- as.data.frame(apply(cashFlowTable,2,function(x)gsub('\\s+', '',x)))
   filename <- paste( "~/Documents/stocks/research/w4_26_Report/", toupper(symbol), "/cashFlowsTable.csv", sep="" )
   print(cashFlowTable)
-  write.csv(cashFlowTable, filename , row.names = FALSE)
+  #write.csv(cashFlowTable, filename , row.names = FALSE)
 }
 
 retrieveCashFlowTable <- function( symbol, colNum, file ){
@@ -129,6 +129,6 @@ retrieveCashFlowTable <- function( symbol, colNum, file ){
   cashFlowTable <- as.data.frame(apply(cashFlowTable,2,function(x)gsub('\\s+', '',x)))
   filename <- paste( "~/Documents/stocks/research/w4_26_Report/", toupper(symbol), "/", file ,".csv", sep="" )
   print(cashFlowTable)
-  write.csv(cashFlowTable, filename , row.names = FALSE)
+  #write.csv(cashFlowTable, filename , row.names = FALSE)
 }
 

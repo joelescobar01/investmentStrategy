@@ -13,13 +13,18 @@ require(quantstrat)
 rm(list=ls())
 setwd("/home/joel/Documents/stocks/strategy")
 
-stock.str='AAPL' # what are we trying it on
+#stock.str='AAPL' # what are we trying it on
+stock.str='AA'
 currency('USD')
 
 stock(stock.str,currency='USD',multiplier=1)
 
 startDate="1999-12-31"
 initEq=1000000
+
+rm("account.macross",pos=.blotter)
+rm("portfolio.macross",pos=.blotter)
+
 portfolio.st='macross'
 account.st='macross'
 initPortf(portfolio.st,symbols=stock.str)
@@ -44,7 +49,10 @@ stratMACROSS <- add.rule(strategy = stratMACROSS,name='ruleSignal', arguments = 
 # stratMACROSS <- add.rule(strategy = stratMACROSS,name='ruleSignal', arguments = list(sigcol="ma50.lt.ma200",sigval=TRUE, orderqty=-100, ordertype='market', orderside='short'),type='enter')
 # stratMACROSS <- add.rule(strategy = stratMACROSS,name='ruleSignal', arguments = list(sigcol="ma50.gt.ma200",sigval=TRUE, orderqty=100, ordertype='market', orderside='short'),type='exit')
 
-getSymbols(stock.str,from=startDate)
+getSymbols(stock.str,
+           src='csv', 
+           dir='/home/joel/Documents/stocks/materialSector/_data', 
+           from=startDate)
 #> [1] "AAPL"
 for(i in stock.str)
   assign(i, adjustOHLC(get(i),use.Adjusted=TRUE))

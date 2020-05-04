@@ -42,7 +42,7 @@ basic_symbols <- function() {
     "OSN","PAAS", "PACK",
     "PGVI","PKG","PKX","PLTYF",
     "POL", "POPE","PPG","PQG",
-    "PZG","RBTK", "RBYCF","RDSMY",
+    "PZG", "RBYCF","RDSMY",
     "RETO","RFP", "RGLD","RIO",
     "RPM","RRIF","RS", "RYAM",
     "RYI","SA","SCCO","SCHN", 

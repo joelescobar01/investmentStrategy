@@ -19,6 +19,13 @@ getStock <- function(symbol, ...){
   return( na.fill(data1, fill=0.00 ) )
 }
 
+getStockTbbl <- function( stockSymbolChar, ... ){
+  stockTbbl <- tq_get( toupper(stockSymbolChar),
+                        get="stock.prices",
+                        ... )
+  return(stockTbbl) 
+}
+
 removeNameFromColumn <- function( stock, name ){
   #names(stock) <- gsub("^.+\\.","",names(name))
 }
@@ -57,6 +64,11 @@ zooToDataFrame <- function( xtsObj, colPrefix=NA ){
   return(dat)
 }
 
+readStockFromCSV <- function( fileDirectory, symbol, ... ){
+  symbol <- toupper(symbol) 
+  getSymbols.csv(symbol, dir=fileDirectory, src="csv", ...)
+}
+
 dfToTimeSeries <- function( dataFrame, indexCol=ncol(dataFrame) ){
     return( xts(dataFrame[,-indexCol], order.by=as.Date(  dataFrame[,indexCol], "%m/%d/%Y"))) 
 }
@@ -87,39 +99,4 @@ exportStockCSV <- function(stock, filename){
     file <- paste( getwd(), "/", filename, sep="")
     write.csv(x, file, row.names = TRUE)
     return(x)
-}
-
-getPeaks <- function( data, minValue=0 ){
-  return( na.omit( findPeaks(data, thresh=minValue) ))
-}
-
-getValleys <- function( data, minValue=0){
-  return( na.omit(findValleys(data, thresh=minValue)))  
-}
-
-dailyMedianPrice <- function( stockClose, stockOpen ){
-    median <- c()
-    min = length(stockClose)  
-    for(t in 1:min ){
-        median[t] <- (stockClose[t]+stockOpen[t])/2 
-    }
-    return(median) 
-}
-
-dailyUpperShadow <- function( stockClose, stockOpen, stockHigh ){
-    upperShadow <- c()
-    min = length(stockClose)
-    for(t in 1:min){
-        upperShadow[t] <- stockHigh[t] - max(stockClose[t], stockOpen[t])
-    }  
-   return(upperShadow) 
-}
-
-dailyLowerShadow <- function( stockClose, stockOpen, stockLow ){
-    upperShadow <- c()
-    min = length(stockClose)
-    for(t in 1:min){
-        upperShadow[t] <- min(stockClose[t], stockOpen[t]) - stockLow[t]
-    }  
-   return(upperShadow) 
 }
