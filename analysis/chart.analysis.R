@@ -153,7 +153,7 @@ chartMACD <- function( macdTbbl, plotTitle="MACD Version 0.1",
         scale_x_date(lim = ( as.Date(c(startDate, endDate )) ),
                      breaks = as.Date( seq(startDate, endDate, by="2 weeks")),
                      minor_breaks = as.Date( seq(startDate, endDate, by="3 days") )) +
-        scale_colour_manual(values=c("red","green")i) +
+        scale_colour_manual(values=c("red","green")) +
         scale_fill_manual(values = alpha(c("red", "green"), .3)) + 
         theme(legend.position = c(0.1, 0.2))
     # Note that, the argument legend.position can be also a numeric vector c(x,y). 

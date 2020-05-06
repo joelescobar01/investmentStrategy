@@ -9,9 +9,11 @@ require(tidyquant)
 require(dplyr)
 require(rvest)
 require(tidyverse)
+source("analysis/chart.analysis.R")
 # width="600px" border="0" cellspacing="0" cellpadding="0" bgcolor="#336699"
-
-probs <- c(.005, .025, .05, .25, .5, .75, .975, .995)
+purchaseQty <- c( 10, 15, 20, 25, 30, 35 )
+probs <- c(.005, 0.0165, .025, .05, .25, .5, .75, .975, .995)
+MAXSALELOSS <- 0.02
 
 stockDailyLogReturns <- function ( stock ){
   dailyLogReturns <- stock %>% 
@@ -104,10 +106,11 @@ myEMA <- function (stocktb,n){
 }
 
 stockDistributionMetricTbbl <- function( stockDailyLogReturnTbbl ){
-  probs <- c(.005, .025, .05, .25, .5, .75, .975, .995)
+  #probs <- c(.005, .025, .05, .25, .5, .75, .975, .995)
   dist_log_returns <- 
     stockDailyLogReturnTbbl %>% 
-    pull(daily.returns) %>%
+    select( daily.returns ) %>% 
+    pull() %>%
     quantile(probs = probs, na.rm = TRUE)
   return( dist_log_returns )
 }
@@ -324,6 +327,67 @@ getSP500Sector <- function( sp_500, Sector ){
   stockSymbols <- sp_500 %>%
     select(symbol) 
   return(sector)
+}
+
+
+stopLossAanalysis <- function( stockTbbl, portfolioAmnt){
+  closePrice <- 
+    stockTbbl %>% 
+    select( close ) %>% 
+    tail(n=1) %>% 
+    pull() 
+  print("Closing Price" )
+  print( closePrice )
+  
+  #get Daily Returns 
+  daily.Returns.Tbbl <- 
+    stockTbbl %>% 
+    stockDailyLogReturnsTbbl() %>% 
+    tail(n=30) 
+  
+  dailyCompoundReturn <- 
+    daily.Returns.Tbbl %>%
+    stockAvgDailyReturnRateTbbl() #average volatitilty
+  
+  print("Stock daily Average compound return: ")
+  print( dailyCompoundReturn-1 )
+  
+  
+  # get Return Metric
+  stockReturnMetric <- 
+    stockTbbl %>% 
+    stockDailyLogReturnsTbbl %>%     
+    stockDistributionMetricTbbl()
+  
+  print("Stock Daily Return Metrics:")
+  print( stockReturnMetric)
+  
+  #getVolatility from previous 9 days 
+  shortTermVolatility <- 
+    stockTbbl %>% 
+    stockSumVolatility(  n=9 ) %>%
+    drop_na() %>%
+    tail(n=30) #graph 
+  
+
+  
+  maxPortfolioLoss <-
+    portfolioAmnt * MAXSALELOSS
+  
+  totalPerQty <- 
+    closePrice * purchaseQty
+  dailyReturnMtx <- 
+    matrix( 0, nrow=length(totalPerQty), ncol = length(stockReturnMetric) ) 
+  colnames(dailyReturnMtx) <- 
+    names( stockReturnMetric )
+  rownames(dailyReturnMtx) <- purchaseQty
+  
+  for(ii in seq_along(totalPerQty)){
+    dailyReturnMtx[ii,] <-  unname( totalPerQty[ii]*(stockReturnMetric) )
+  }
+  print("Rate of Return per Day per Qty Purchased: ")
+  print( dailyReturnMtx )
+  
 }
 
 ## get the last row of tibble %>% slice(n()) 

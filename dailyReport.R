@@ -1,5 +1,6 @@
 source('chartIndicators/charts.R')
 source('chartIndicators/macdFunction.R')
+source('chartIndicators/rsiFunction.R')
 source('chartIndicators/bBandFunction.R')
 source("lib/utils.R")
 source("analysis/riskAnalysis.R")
@@ -86,30 +87,76 @@ saveToFile <- function( filename, FUN , args){
 directory <- paste( getwd(), "research", format(Sys.time(), "%a_%b_%d_%Y"), sep="/" )
 
 
-generateTest <- function( symbol, dir=directory ){
+
+daily.Buy.Signal <- function( symbol, dir=directory ){
   symbol <- toupper(symbol)
   
-  subdirectory <- paste(dir, symbol, "", sep="/" )
-  dir.create(subdirectory, showWarnings = FALSE)
-  
-  stock <- getStock( symbol)
-  stockDF <- convertStockToDataFrame(stock, symbol)
-  stockTb <- tq_get( symbol, get="stock.prices" ) 
+  subdirectory <- paste(dir, "buySignal", symbol, "", sep="/" )
+  dir.create(subdirectory, showWarnings = FALSE, recursive = FALSE, mode = "0777" )
 
-  filename <- paste( subdirectory,"RSI.jpg", sep="" )
-  print(filename)
-  if(!file.exists(filename) ){
-    print("Generating RSI Report")
-    jpeg(filename, width = 1080, height = 720)
-    plot(generateRSIReport(stock, symbol))
-    dev.off()
-    if(file.exists(filename))
-      print("Finished RIS Report")    
-    else {
-      print("Had problem saving to file ")
+  stockTb <- tq_get( symbol, get="stock.prices",
+                    from=Sys.Date()-45 ) 
+
+  macdAlarm <- NULL
+  rsiAlarm <- NULL 
+
+  tryCatch({
+    macdAlarm <- 
+      signal.Buy.MACD(stockTb) %>% 
+      tail( n= 7 )
+    rsiAlarm <- 
+      signal.Buy.RSI(stockTb) %>% 
+      tail(n=7)
+  },error=function(e){ return(NA) })   
+   
+
+  if(is.null(macdAlarm)) return(NA) 
+  if(is.null(rsiAlarm)) return(NA) 
+
+    #filename <- paste( subdirectory,"Bar.jpg", sep="" )
+    #if(!file.exists(filename) ){
+    #print("Generating Bar Report")
+    #jpeg(filename, width = 1080, height = 720)
+    #plot( chart.BAR( stocktTb ))
+    #dev.off()
+    #if(file.exists(filename))
+    #  print("Finished Report")    
+    #else {
+    #  print("Had problem saving to file ")
+    #}    
+  #}#
+
+  if( count( rsiAlarm ) > 0 ){
+    filename <- paste( subdirectory,"RSI.jpg", sep="" )
+    if(!file.exists(filename) ){
+      print("Generating RSI Report")
+      jpeg(filename, width = 1080, height = 720)
+      plot(chart.RSI( rsiAlarm ))      
+      dev.off(  )
+      if(file.exists(filename))
+        print("Finished Report")    
+      else {
+        print("Had problem saving to file ")
+      }
+    }
+  }
+
+  if( count( macdAlarm ) > 0 ){
+    filename <- paste( subdirectory,"MACD.jpg", sep="" )
+    if(!file.exists(filename) ){
+      jpeg(filename, width = 1080, height = 720)
+      #plot(generateMACDReport(stockDF,symbol))
+      plot(chart.MACD(macdAlarm))
+      dev.off()
+      if(file.exists(filename))
+        print("Finished Report")    
+      else {
+        print("Had problem saving to file ")
+      }
     }
   }
 }
+
 
 generate3MReport <- function( symbol, dir=directory ){
   symbol <- toupper(symbol)
@@ -251,6 +298,16 @@ generateMaterialsReport <- function( symbols=basic_symbols() ){
   for(ii in seq_along(symbols)){
     print( paste("Starting Report on:", symbols[ii]) )
         generate3MReport(symbols[ii], directory )
+
+  }
+}
+
+generateMaterialBuyReport <- function( symbols=basic_symbols() ){
+  source('var/materialSectorList.R')
+      #sym <- as.character( basic_symbols() )
+  for(ii in seq_along(symbols)){
+    print( paste("Starting Report on:", symbols[ii]) )
+        daily.Buy.Signal(symbols[ii], directory )
 
   }
 }

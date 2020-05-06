@@ -6,6 +6,9 @@ library(ggplot2)
 #source("lib/utils.R")
 #source("var/settings.R")
 
+# finds stocks that signal a nearby buy 
+#signal.MACD.BUY <- function( stockTbbl, nDays=7 ){
+    
 getMACD <- function( stockDF ){
   macd <- 
     MACD(Cl(stockDF), nFast=12, nSlow=26,
@@ -13,53 +16,37 @@ getMACD <- function( stockDF ){
   return( macd)
 }
 
-
-macd.Interface <- function( stockTbbl, startDate=NA, 
-                           endDate=NA ){
+macd.Interface <- function( stockTbbl){
   stock.MACD.Tb <- 
     stockTbbl %>% 
-    get.MACD() %>% 
-    macdLinesCrossover() 
+    get.MACD()
   
   #calculate signal cross over 
   #stock.MACD.Tb <- 
   #  stock.MACD.Tb %>% 
   #  macdLinesCrossover() 
-
-  if( !is.na(startDate) ){
-    stock.MACD.Tb <-
-      stock.MACD.Tb %>% 
-      filter( date >= startDate )
-  }
-  
-  if( !is.na(endDate) ){
-    stock.MACD.Tb <-
-      stock.MACD.Tb %>% 
-      filter( date <= endDate )
-  }
-  
   return( stock.MACD.Tb )
 }
 
 get.MACD <- function(stockTbbl, fast=3, slow=10, signal=16 ){
+    
   stockMACDTbbl <- 
-    stockTbbl %>%
-      tq_mutate(select     = adjusted, 
+    stockTbbl %>% 
+    group_by(symbol) %>% 
+    tq_mutate(select     = adjusted, 
                 mutate_fun = MACD, 
                 nFast      = 3, 
                 nSlow      = 10, 
                 nSig       = 16, 
                 maType     = EMA) %>%
-     mutate(diff = macd - signal) %>%
-     select(-(open:volume)) %>%
-     drop_na() 
-
+     mutate(divergence = macd - signal) %>%
+     select(-(open:volume)) %>% 
+    drop_na() 
   return(stockMACDTbbl) 
 }
 
 #returns Vector 
 macdLinesCrossover <- function( macdTbbl ){
-  print(macdTbbl)
   cross <- 
     macdTbbl %>% 
     mutate( macd.above = macd>signal ) %>% 
@@ -73,33 +60,75 @@ macdLinesCrossover <- function( macdTbbl ){
   return(macdTbbl )      
 }
 
-chart.MACD <- function( macdTbbl, plotTitle="MACD Version 1.1" ){
-    buySignal <- 
-      macdTbbl %>% 
-      filter(crossover>0) %>% 
-      select(date) %>% 
-      pull()  
-   
-  sellSignal <- 
-      macdTbbl %>% 
-      filter(crossover<0) %>% 
-      select(date) %>%
-      pull()  
+macdSlope <- function( macdTbbl, slope=1){
+  slope <- sign(slope)
+  
+  positiveSlopeMACD <-
+    macdTbbl[ which( divergence( positiveDiffMACD$macd ) >= 0 ), ]
+  return(macdTbbl) 
+}
 
+macdSignalDistance <- function( macdTbbl ){
+  positiveDiffMACD <- 
+    stockMACDTbbl %>%
+    filter( row_number() >= (n()-29)) %>% 
+    filter( divergence >= 0 )
+  return(positiveDiffMACD) 
+}
+
+signal.Buy.MACD <- function( stockTbbl, nDays=9 ){
+  
+  stockMACDTbbl <- 
+    stockTbbl %>%
+    get.MACD() 
+
+  MACDTbbl <- 
+    stockMACDTbbl %>% 
+    tail(n=nDays) 
+
+  #signal 1: positive DIFF 
+  positiveDiffMACD <- 
+    MACDTbbl %>%
+    filter( divergence >= 0 )
+
+
+  #signal2: positive MACD slope 
+  positiveSlopeMACD <-
+    positiveDiffMACD %>% 
+    mutate( slope.macd = macd - lag(macd) ) %>% 
+    filter( slope.macd > 0) %>% 
+    pull()
+
+  #signal3: macd crossed over signal
+  #crossMACDLine <- 
+  #  positiveSlopeMACD %>% 
+  #  macdLinesCrossover() 
+  
+  if( length(positiveSlopeMACD) == 0 )
+    return(NA)
+  else{
+    g1 <- 
+      chart.MACD( stockMACDTbbl )
+    return(g1)
+  } 
+}
+
+chart.MACD <- function( macdTbbl, plotTitle="MACD Version 1.1" ){
+    plotTitle <-
+      macdTbbl %>% 
+      select(symbol) %>% 
+      first() %>% 
+      pull() 
     g1 <- ggplot( macdTbbl, aes(x=date)) + 
         geom_line( aes(y=macd, colour="MACD"), size=1 ) + 
         geom_line( aes(y=signal, colour="Signal"), size=1) +
-        geom_col( aes(y=diff, fill=sign(diff) ) ) + 
-        geom_hline( aes(yintercept = 0), linetype="dashed") +
-        geom_vline( xintercept=buySignal, color="orange", linetype="dashed" ) +
-        geom_vline( xintercept=sellSignal, color="blue" , linetype="dashed" ) +
+        geom_col( aes(y=divergence, fill=sign(divergence) ) ) + 
         labs(title=plotTitle, 
               subtitle="Minor ticks = 3 days, Buy Signal = Orange, Sell Signal = Blue", 
               y="", 
               x="Date",
               caption="nFast=12, nSlow=26, nSig=9, maType=EMA") + 
-        scale_colour_manual(values=c("red","green"), name=NULL) +
-        scale_fill_gradient(name=NULL, low = alpha("red",.3), high = alpha("green",.3))+
+        scale_fill_gradient(guide=NULL, name=NULL, low = alpha("red",.3), high = alpha("green",.3))+
         theme(legend.position = c(0.1, 0.2))
 
     # Note that, the argument legend.position can be also a numeric vector c(x,y). 
