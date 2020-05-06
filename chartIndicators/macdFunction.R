@@ -86,11 +86,24 @@ signal.Buy.MACD <- function( stockTbbl, nDays=9 ){
     stockMACDTbbl %>% 
     tail(n=nDays) 
 
+    
+  #signal 1.5: If divergence is pretty large and positive ignore uptrending 
+  divergenceVector <- 
+    MACDTbbl %>% 
+    select(divergence) %>% 
+    pull() 
+  
+  divergenceMean <- 
+    divergenceVector %>% 
+    mean() 
+  divergenceSD <- 
+    divergenceVector %>% 
+    sd() 
+
   #signal 1: positive DIFF 
   positiveDiffMACD <- 
     MACDTbbl %>%
-    filter( divergence >= 0 )
-
+    filter( divergence  <= divergenceMean+divergenceSD )
 
   #signal2: positive MACD slope 
   positiveSlopeMACD <-
@@ -113,23 +126,41 @@ signal.Buy.MACD <- function( stockTbbl, nDays=9 ){
   } 
 }
 
-chart.MACD <- function( macdTbbl, plotTitle="MACD Version 1.1" ){
-    plotTitle <-
-      macdTbbl %>% 
-      select(symbol) %>% 
-      first() %>% 
-      pull() 
+chart.MACD <- function( macdTbbl, plotTitle="MACD Version 1.2" ){
+  startDate <- 
+    macdTbbl %>% 
+    select(date) %>% 
+    first(n=3) %>%
+    last() %>% 
+    pull() 
+  
+  startSignal <-
+    macdTbbl %>% 
+    select(signal) %>% 
+    first() %>% 
+    pull() 
+  
+  startMACD <-
+    macdTbbl %>% 
+    select(macd) %>% 
+    first() %>% 
+    pull() 
+  
     g1 <- ggplot( macdTbbl, aes(x=date)) + 
-        geom_line( aes(y=macd, colour="MACD"), size=1 ) + 
+        geom_line( aes(y=macd, colour="MACD"), size=1 ) +
+        geom_text(x=startDate, y=startMACD+1, aes(colour="MACD"), label="MACD", size=4)+
         geom_line( aes(y=signal, colour="Signal"), size=1) +
+        geom_text(x=startDate, y=startSignal-0.5, aes(colour="Signal"), label="Signal", size=4)+
         geom_col( aes(y=divergence, fill=sign(divergence) ) ) + 
+        scale_colour_manual( 
+          guide="none",
+          values=c("blue", "red")
+        )+
         labs(title=plotTitle, 
-              subtitle="Minor ticks = 3 days, Buy Signal = Orange, Sell Signal = Blue", 
               y="", 
-              x="Date",
-              caption="nFast=12, nSlow=26, nSig=9, maType=EMA") + 
-        scale_fill_gradient(guide=NULL, name=NULL, low = alpha("red",.3), high = alpha("green",.3))+
-        theme(legend.position = c(0.1, 0.2))
+              x="Date") + 
+        scale_fill_gradient(guide=NULL, name=NULL, low = alpha("red",.5), high = alpha("green",.5))+
+        theme()
 
     # Note that, the argument legend.position can be also a numeric vector c(x,y). 
     #In this case it is possible to position the legend inside the plotting area. x and y 

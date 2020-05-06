@@ -73,12 +73,12 @@ generate.MACD.Report <- function( plotMACD, symbol){
   dev.off(  )
 }
 
-generate.BAR.Report <- function( stockTbbl, symbol=stockTbbl%>%select(symbol)%>%first()){
+generate.BAR.Report <- function( stockTbbl, symbol){
   filename <- paste( symbol, "BAR.jpg", sep="_" )
   filename <- paste( directory, filename, sep="/" )
   print("Generating BAR Report")
   jpeg(filename, width = 1080, height = 720)
-  plot( chart.BAR( stockTbbl ))      
+  plot( chart.BAR( stockTbbl, symbol ))      
   dev.off(  )
 }
 

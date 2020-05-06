@@ -113,19 +113,30 @@ signal.Buy.RSI <- function( stockTbbl ){
 }
 
 chart.RSI <- function( rsiTbbl, plotTitle="rsi Version 1.1" ){
-    plotTitle <-
-      rsiTbbl %>% 
-      select(symbol) %>% 
-      first() %>% 
-      pull() 
+  
+  startDate <- 
+    rsiTbbl %>% 
+    select(date) %>% 
+    first(n=3) %>%
+    last() %>% 
+    pull() 
    g1 <- ggplot( rsiTbbl, aes(x=date)) + 
         geom_line( aes(y=rsi, colour="rsi"), size=1 ) + 
-        geom_hline(yintercept = 30 , linetype="dashed") +
+        geom_hline(aes( yintercept = 30, colour="Oversold" ), linetype="dashed") +
+        geom_text(x=startDate, aes(y=32, label="Oversold"), size=4)+
         geom_hline(yintercept = 70 , linetype="dashed" )+
-        labs(title=plotTitle, 
+        geom_text(x=startDate, aes(y=72, label="Overvalued"), size=4)+
+        labs(title=plotTitle,
+             caption="9 days, EMA",
               y="", 
               x="Date")+
-        theme(legend.position = c(0.1, 0.2))
+        scale_colour_manual( 
+          guide="none",
+          values=c("blue", "red")
+          )+
+        theme(
+          legend.position = c(0.1, 0.2),
+          legend.title = element_blank() )
 
     # Note that, the argument legend.position can be also a numeric vector c(x,y). 
     #In this case it is possible to position the legend inside the plotting area. x and y 
