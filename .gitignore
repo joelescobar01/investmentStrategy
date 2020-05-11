@@ -3,4 +3,5 @@ research/
 .Rhistory 
 *.bak
 materialSector/
-thirdparty/ 
+thirdparty/
+analysis/financialAnalysis 

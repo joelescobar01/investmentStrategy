@@ -1,0 +1,74 @@
+NET Income Chart 
+
+1                               SG&A Expense   1.08B   756.6M   771.1M   825.3M 822.9M           NA
+2                     Research & Development  138.8M    71.6M    57.6M    64.5M  72.9M           NA
+3                                 Other SG&A  941.7M     685M   713.5M   760.8M   750M           NA
+4                                 SGA Growth       -  -29.98%    1.92%    7.03% -0.29%           NA
+5                    Other Operating Expense       -        -        -        -      -           NA
+6                            Unusual Expense  249.8M   109.3M   369.5M    63.4M  40.9M           NA
+7                 EBIT after Unusual Expense   1.62B (109.3M) (369.5M)    1.85B  2.08B           NA
+8               Non Operating Income/Expense   46.1M    36.7M   114.3M    57.2M 147.9M           NA
+9              Non-Operating Interest Income    4.6M     6.1M    31.3M    46.3M      -           NA
+10             Equity in Affiliates (Pretax)  172.4M     147M    80.1M   174.8M 215.4M           NA
+11                          Interest Expense  110.1M    96.4M   105.1M   115.3M 153.4M           NA
+12                   Interest Expense Growth       -  -12.44%    9.02%    9.71% 33.04%           NA
+13                    Gross Interest Expense  159.2M   129.1M   124.1M   134.8M 166.9M           NA
+14                      Interest Capitalized   49.1M    32.7M      19M    19.5M  13.5M           NA
+15                             Pretax Income   1.73B    1.55B    1.42B    2.02B  2.29B           NA
+16                      Pretax Income Growth       -  -10.32%   -8.91%   42.29% 13.62%           NA
+17                             Pretax Margin       -        -        -        - 25.67%           NA
+18                                Income Tax  415.9M   432.6M   260.9M   524.3M 480.1M           NA
+19             Income Tax - Current Domestic  192.9M   192.2M    69.8M   322.8M   187M           NA
+20              Income Tax - Current Foreign  220.1M   178.6M   229.1M   256.9M 235.5M           NA
+21            Income Tax - Deferred Domestic   15.6M    47.8M     7.4M (109.2M)  12.1M           NA
+22             Income Tax - Deferred Foreign (12.7M)      14M  (45.4M)    53.8M  45.5M           NA
+23                        Income Tax Credits       -        -        -        -      -           NA
+24                      Equity in Affiliates       -        -        -        -      -           NA
+25          Other After Tax Income (Expense)       -        -        -        -      -           NA
+26                   Consolidated Net Income   1.32B    1.12B    1.16B    1.49B  1.81B           NA
+27                 Minority Interest Expense   39.7M    22.5M    20.8M    35.1M  49.4M           NA
+28                                Net Income   1.28B     1.1B    1.13B    1.46B  1.76B           NA
+29                         Net Income Growth       -  -13.96%    3.17%   28.31% 20.91%           NA
+30                         Net Margin Growth       -        -        -        - 19.73%           NA
+31 Extraordinaries & Discontinued Operations       - (468.4M)    1.87B    42.2M      -           NA
+32    Extra Items & Gain/Loss Sale Of Assets       - (846.6M)    1.78B        -      -           NA
+33        Cumulative Effect - Accounting Chg       -        -        -        -      -           NA
+34                   Discontinued Operations       -   378.2M    85.5M    42.2M      -           NA
+35          Net Income After Extraordinaries   1.28B   631.1M       3B     1.5B  1.76B           NA
+36                       Preferred Dividends       -        -        -        -      -           NA
+37            Net Income Available to Common   1.28B    1.48B    1.22B     1.5B  1.76B           NA
+38                               EPS (Basic)    5.95     6.83     5.60     6.83   7.99           NA
+39                        EPS (Basic) Growth       -   14.83%  -18.05%   22.05% 16.97%           NA
+40                  Basic Shares Outstanding  214.9M   216.4M     218M   219.3M 220.3M           NA
+41                             EPS (Diluted)    5.88     6.77     5.55     6.78   7.94           NA
+42                      EPS (Diluted) Growth       -   15.11%  -18.01%   22.23% 17.08%           NA
+43                Diluted Shares Outstanding  217.3M   218.3M   219.8M   220.8M 221.6M           NA
+44                                    EBITDA   2.81B    2.43B    2.53B    2.89B   3.2B           NA
+45                             EBITDA Growth       -  -13.60%    4.36%   14.04% 10.99%           NA
+46                             EBITDA Margin       -        -        -        - 35.92%           NA
+
+
+
+
+Current Assets 
+   Fiscal year is October-September. All values USD millions.     2015    2016    2017    2018    2019 5-year trend
+1                               Cash & Short Term Investments   206.4M   1.29B   3.68B   2.98B   2.41B           NA
+2                                                   Cash Only   206.4M   1.29B   3.27B   2.79B   2.25B           NA
+3                                      Short-Term Investments        -       -    404M  184.7M    166M           NA
+4                        Cash & Short Term Investments Growth        - 526.55% 184.38% -19.08% -18.86%           NA
+5                        Cash & ST Investments / Total Assets    1.18%   7.17%  19.91%  15.52%  12.75%           NA
+6                                   Total Accounts Receivable    1.84B   1.65B   1.63B   1.58B   1.62B           NA
+7                                   Accounts Receivables, Net    1.52B   1.21B   1.26B   1.28B   1.39B           NA
+8                                 Accounts Receivables, Gross    1.57B   1.27B   1.35B   1.38B   1.48B           NA
+9                                  Bad Debt/Doubtful Accounts  (48.5M) (55.3M) (93.5M) (91.3M) (88.2M)           NA
+10                                          Other Receivables   326.3M  439.2M  375.2M  292.2M  233.4M           NA
+11                                 Accounts Receivable Growth        - -10.49%  -0.97%  -3.49%   2.89%           NA
+12                               Accounts Receivable Turnover     5.37    4.55    5.01    5.66    5.50           NA
+13                                                Inventories   657.8M  347.8M  335.4M  396.1M  388.3M           NA
+14                                             Finished Goods   494.9M  131.3M    120M  125.4M  128.8M           NA
+15                                           Work in Progress    34.4M   18.3M   15.7M   21.2M   27.5M           NA
+16                                              Raw Materials   229.3M  117.1M    223M  249.5M    232M           NA
+17                                  Progress Payments & Other (100.8M)   81.1M (23.3M)       -       -           NA
+18                                       Other Current Assets   203.3M   1.03B  229.7M  133.2M  192.9M           NA
+19                               Miscellaneous Current Assets     136M  932.4M   38.3M    3.6M  115.5M           NA
+20                                       Total Current Assets    2.91B   4.32B   5.88B   5.08B   4.62B           NA
