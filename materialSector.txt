@@ -1,7 +1,0 @@
- [1] "APD"  "ALB"  "AMCR" "AVY"  "BLL"  "CE"   "CF"   "CTVA" "DOW"  "DD"  
-[11] "EMN"  "ECL"  "FMC"  "FCX"  "IP"   "IFF"  "LIN"  "LYB"  "MLM"  "MOS" 
-[21] "NEM"  "NUE"  "PKG"  "PPG"  "SEE"  "SHW"  "VMC"  "WRK" 
-========= Companies in the SP500 for Materials Sector ============= [1]
- "APD"  "ALB"  "AMCR" "AVY"  "BLL"  "CE"   "CF"   "CTVA" "DOW"  "DD"  
-[11] "EMN"  "ECL"  "FMC"  "FCX"  "IP"   "IFF"  "LIN"  "LYB"  "MLM"  "MOS" 
-[21] "NEM"  "NUE"  "PKG"  "PPG"  "SEE"  "SHW"  "VMC"  "WRK" 

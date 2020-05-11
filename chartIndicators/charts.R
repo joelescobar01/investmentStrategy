@@ -4,7 +4,6 @@ library(ggpubr)
 library(tidyquant) 
 library(ggplot2)
 source('lib/chartTools.R')
-#source('var/settings.R')
 source("chartIndicators/momFunction.R")
 source("chartIndicators/bBandFunction.R")
 source("chartIndicators/adxFunction.R")
@@ -147,14 +146,7 @@ chartMomentum <- function( stockOHLC,  plotTitle="MOM Chart 1.1",endDate=Sys.Dat
                      minor_breaks = as.Date( seq(startDate, endDate, by="3 days") )) +
         theme(legend.position = c(0.1, 0.9))
     return(g)
-    # chartSeries(stock,
-    #         name=plotTitle,
-    #         theme=chartTheme('white'),
-    #         subset=paste(startDate,endDate,sep="::"),
-    #         TA= ta
-    #     )
-
-}    
+ }    
 
 
 chartBBands2 <- function( stockOHLC, endDate=Sys.Date(), startDate=Sys.Date()-90, plotTitle="BBands Chart 1.1" ){
