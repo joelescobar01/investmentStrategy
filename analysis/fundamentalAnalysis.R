@@ -3,7 +3,8 @@ library(dplyr)
 library( stringr ) 
 library(tidyverse)
 library(httr)
-library(ggparty)
+source("financialRatios.R")
+
 
 marketWatchWebPageURL <- "https://www.marketwatch.com" 
 marketWatchWebPagePath <- "investing/stock" 
@@ -192,72 +193,6 @@ addNetIncomeTableRowNames <- function( incomeTbl, incomeMatrix,
   return(temp) 
 }
 
-generateIncomeTable <- function( incomeTbl, netIncomeTbl ){
-  incomeStatementTbl <- 
-    inner_join( incomeTbl, netIncomeTbl )
-  return( incomeStatementTbl )
-}
-
-
-calculateGrossProfit <- function( incomeStatementTbl ){
-  incomeStatementTbl <- 
-    incomeStatementTbl %>%
-    mutate( Gross.Profit.Margin = Gross.Income/Gross.Revenue ) 
-  
-}
-calculateOperatingMargin <- function( incomeStatementTbl ){
-  incomeStatementTbl <- 
-    incomeStatementTbl %>% 
-    mutate( Operating.Margin = EBITDA/Gross.Revenue )
-  return( incomeStatementTbl ) 
-}
-
-calculateInterestCoverageRatio <- function( incomeStatementTbl ){
-  incomeStatementTbl <- 
-    incomeStatementTbl %>% 
-    mutate( Interest.Coverage = EBITDA/Interest.Expenses )
-  return( incomeStatementTbl ) 
-}
-
-calculateNetProfitMargin <- function( incomeStatementTbl ){
-  incomeStatementTbl <-
-    incomeStatementTbl %>% 
-    mutate( Net.Profit.Margin = Net.Income/Gross.Revenue )
-  return( incomeStatementTbl )
-}
-
-calculateReturnOnSales <- function( incomeStatementTbl ){
-  incomeStatementTbl <-
-    incomeStatementTbl %>%
-    mutate( Return.On.Sales = EBITDA/Gross.Revenue )
-  
-  return( incomeStatementTbl )
-}
-
-incomeStatementModelTree <- function( symbol ){
-  grossIncome <- 
-    incomeStatementURL( symbol ) %>% 
-    createHTMLSession() %>% 
-    marketWatchGrossIncomeTable2() 
-  
-  netIncome <- 
-    incomeStatementURL( symbol ) %>% 
-    createHTMLSession() %>% 
-    marketWatchNetIncomeTable2()
-  
-  incomeTable <-
-    generateIncomeTable(grossIncome, netIncome) %>% 
-    mutate( symbol=symbol ) %>% 
-    select( symbol, everything() ) %>% 
-    calculateGrossProfit() %>% 
-    calculateInterestCoverageRatio() %>% 
-    calculateNetProfitMargin() %>% 
-    calculateOperatingMargin() %>% 
-    calculateReturnOnSales()
-  
-  return(incomeTable)
-}
-
 marketWatchNetIncomeTable2 <- function( htmlSession,n=2 ){
   incomeStatement <-
     marketWatchTableClass( htmlSession )   
@@ -432,18 +367,6 @@ addLiabilitiesTableRowNames <- function( liabilitiesTbl, liabilitiesMatrix,
   return(temp) 
 }
 
-generateAssetTable <- function( currentAssetTbl, totalAssetTbl ){
-  balanceSheetTbl <- 
-    inner_join(  currentAssetTbl, totalAssetTbl )
-  return( balanceSheetTbl )
-}
-
-calculateAssetTurnover <- function( assetTable ){
-  incomeStatementTbl <- 
-    incomeStatementTbl %>% 
-    mutate( Operating.Margin = EBITDA/Gross.Revenue )
-  return( incomeStatementTbl ) 
-}
 
 sp500ListWebScrape <- function( ){
   sp_500 <- read_html("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies") %>%
