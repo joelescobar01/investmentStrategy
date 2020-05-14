@@ -18,6 +18,60 @@ library(dplyr)
 
 #movement patterns 
 
+
+chart.CandleStick.Recognizer <- function( stockTbbl ) {
+  
+
+  hammer <- 
+    stockTbbl %>% 
+    Hammer() %>% 
+    filter( hammer == TRUE ) 
+
+  ihammer <- 
+    stockTbbl %>% 
+    InvertedHammer() %>% 
+    filter( inverted.hammer == TRUE ) 
+
+  doji <- 
+    stockTbbl %>% 
+    Doji() %>% 
+    filter( doji == TRUE ) 
+  dragonfly <- 
+    stockTbbl %>% 
+    DragonflyDoji() %>% 
+    filter( dragonfly.doji == TRUE ) 
+  gravestone <- 
+    stockTbbl %>% 
+    GravestoneDoji() %>% 
+    filter( gravestone.doji == TRUE ) 
+
+  g1 <- 
+    ggplot( stockTbbl, aes( x=date ) ) + 
+    geom_candlestick(aes(open = open, high = high, low = low, close = close)) +
+    geom_point(data=dragonfly,aes( x=date, y=low, shape="dragonfly doji"),color="green", size=5, alpha=0.4) +
+    geom_point( data=doji, aes( x=date, y=low, shape="doji" ),color="aquamarine", size=5, alpha=0.4) +
+    geom_point( data=hammer, aes( x=date, y=high, shape="hammer"), size=5, alpha=0.4, color="blue" )+ 
+    geom_point( data=gravestone, aes( x=date, y=high, shape="gravestone doji"), size=5, alpha=0.4, color="red" ) 
+
+  
+  return(g1) 
+}
+
+chartCandlesticks <- function( stockDF, plotTitle="Candlestick Version 0.1", endDate=Sys.Date(), startDate=Sys.Date()-90 ){
+    #stockDF <- zooToDataFrame(stock)
+    colnames(stockDF) <- c("Open", "High", "Low", "Close", "Volume", "Adjusted" )
+    g1 <- ggplot(stockDF, aes(x = as.Date(row.names(stockDF)) , y = Close)) +
+            geom_candlestick(aes(open = Open, high = High, low = Low, close = Close)) +
+            geom_ma(ma_fun = SMA, n = 13, linetype = 5, size = 1.25) +  
+            labs(title = "Candlestick Chart", y = "Closing Price", x = "", subtitle="13 Day Moving Average") + 
+            scale_x_date(lim = ( as.Date(c(startDate, endDate )) ),
+                     breaks = as.Date( seq(startDate, endDate, by="2 weeks")),
+                     minor_breaks = as.Date( seq(startDate, endDate, by="3 days") )) +
+            theme_tq(
+            ) 
+     return(g1)
+}
+
 bullishSingleCandlePattern <- function( stockOHLC ){
   #single candle patterns 
   hammerVector <- hammer(stockOHLC)

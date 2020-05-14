@@ -3,36 +3,39 @@
 #' @param delta sensitivity parameter
 #' @return TRUE if Doji pattern detected
 #' @export
-doji <- function(x, delta = 0.1) {
-  WC <- CandleStickLength(x)
-  BL <- CandleBodyLength(x)
-  result <- xts::reclass(delta * WC >= BL, x)
-  colnames(result) <- "doji"
-  return(result)
+Doji <- function(stockTbbl, delta = 0.1) {
+  candle <- 
+    stockTbbl %>% 
+    CandleStickLength() %>% 
+    CandleBodyLength() %>% 
+    mutate( doji = delta*candle.stick.length >= candle.body.length ) 
+  return(candle)
 }
-
 #' Determine Dragon Doji Pattern using a OHLC price series
 #' @param x OHLC prices.
 #' @param delta Sensivity
 #' @return TRUE if Dragon Doji pattern detected
-dragonfly.doji <- function(x, delta=0.1) {
-  WC <- CandleStickLength(x)
-  US <- UpperShadowLength(x)
-
-  result <- xts::reclass(delta * WC >= US & doji(x,delta), x)
-  colnames(result) <- "dragonfly doji"
-  return(result)
+DragonflyDoji <- function(stockTbbl, delta=0.1) {
+  candle <- 
+    stockTbbl %>% 
+    CandleStickLength() %>% 
+    UpperShadowLength() %>% 
+    Doji() %>%
+    mutate( dragonfly.doji = delta*candle.stick.length >= upper.shadow.length & doji ) 
+  return(candle)
 }
+
 
 #' Determine Gravestoen Doji Pattern using a OHLC price series
 #' @param x OHLC prices.
 #' @param delta Sensivity
 #' @return TRUE if Doji pattern detected
-gravestone.doji <- function(x,delta=0.1) {
-  WC <- CandleStickLength(x)
-  LS <- LowerShadowLength(x)
-
-  result <- xts::reclass(delta * WC >= LS & doji(x,delta), x)
-  colnames(result) <- "gravestone.doji"
-  return(result)
+GravestoneDoji <- function(stockTbbl,delta=0.1) {
+  candle <- 
+    stockTbbl %>% 
+    CandleStickLength() %>% 
+    LowerShadowLength() %>% 
+    Doji() %>%
+    mutate( gravestone.doji = delta*candle.stick.length >= lower.shadow.length & doji ) 
+  return(candle)
 }

@@ -1,58 +1,45 @@
 #' Determine bearish candle using a OHLC price series
 #' @param x OHLC prices.
 #' @return TRUE if bullish candel detected
-bearish.candle <- function(x) {
-  OP <- quantmod::Op(x)
-  CL <- quantmod::Cl(x)
+BearishCandle <- function(stockTbbl) {
+  candle <- 
+    stockTbbl %>% 
+    mutate( bearish.candle = open > close ) 
 
-  result <- xts::reclass(OP > CL, x)
-  colnames(result) <- "bearish candle"
-  return(result)
+  return( candle ) 
 }
-
 #' Determine bearish engulfing pattern using a OHLC price series
 #' @param x OHLC prices.
 #' @return TRUE if bearish engulfing pattern detected
-bearish.engulf <- function(x) {
-  BT <- CandleBodyTop(x)
-  BB <- CandleBodyBottom(x)
+BearishEngulf <- function(stockTbbl) {
+  candle <-
+    stock %>% 
+    CandleBodyTop( ) %>% 
+    CandleBodyBottom() %>% 
+    BearishCandle() %>% 
+    BullishCandle() %>% 
+    mutate( bearish.engulfing = bearish.candle & 
+                                lag(bullish.candle ) & 
+                                candle.body.top >= lag( candle.body.top ) & 
+                                candle.body.bottom <= lag( candle.body.bottom )) 
 
-  Lag.BT <- quantmod::Lag(BT)
-  Lag.BB <- quantmod::Lag(BB)
-
-  U <- bullish.candle(x)
-  D <- bearish.candle(x)
-
-  Lag.U <- quantmod::Lag(U)
-
-  result <- xts::reclass(D  &
-                    Lag.U &
-                    BT >= Lag.BT &
-                    BB <= Lag.BB, x)
-  colnames(result) <- "bearish engulfing"
-  return(result)
+  return( candle ) 
 }
-
 
 #' Determine bearish harami pattern using a OHLC price series
 #' @param x OHLC prices.
 #' @return TRUE if bearish haramipattern detected
-bearish.harami <- function(x) {
-  BT <- CandleBodyTop(x)
-  BB <- CandleBodyBottom(x)
 
-  Lag.BT <- quantmod::Lag(BT)
-  Lag.BB <- quantmod::Lag(BB)
-
-  U <- bullish.candle(x)
-  D <- bearish.candle(x)
-
-  Lag.U <- quantmod::Lag(U)
-
-  result <- xts::reclass(D  &
-                      Lag.U &
-                      BT <= Lag.BT &
-                      BB >= Lag.BB, x)
-  colnames(result) <- "bearish harami"
-  return(result)
+BearishHarami <- function( stockTbbl ) {
+  candle <- 
+    stockTbbl %>% 
+    CandleBodyTop() %>% 
+    CandleBodyBottom() %>% 
+    BullishCandle() %>% 
+    BearishCandle() %>% 
+    mutate( bearish.harami =  bearish.candle & 
+                              lag( bullish.candle ) & 
+                              candle.body.top <= lag( candle.body.top ) &
+                              candle.body.bottom >= lag( candle.body.bottom ) )
+    return( candle ) 
 }

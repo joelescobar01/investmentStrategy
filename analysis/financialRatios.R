@@ -36,20 +36,6 @@ calculateReturnOnSales <- function( incomeStatementTbl ){
   return( incomeStatementTbl )
 }
 
-calculateAssetTurnover <- function( duPontTable ){
-  assetTurnoverTable <-
-    duPontTable %>% 
-    mutate( Asset.Turnover = Gross.Revenue/Total.Assets  )
-  return( assetTurnoverTable ) 
-}
-
-calculateReturnOnAsset <- function( duPontTable ){
-  roaTable <-
-    duPontTable %>% 
-    mutate( Return.On.Asset = Return.On.Sales/Asset.Turnover  )
-  return( roaTable ) 
-}
-
 calculateDebtToAsset <- function( balanceSheet ){
   debtAsset <- 
     balanceSheet %>% 
@@ -76,9 +62,22 @@ calculateEquityMultiplier <- function( balanceSheet ){
 calculateReturnOnEquity <- function( duPontTable ){
   roaTable <-
     duPontTable %>% 
-    mutate( Return.On.Equity = Return.On.Asset*Asset.to.Equity  )
+    mutate( Return.On.Equity = Return.On.Asset*Asset.To.Equity  )
   return( roaTable ) 
 }
 
+calculateAssetTurnover <- function( duPontTable ){
+  assetTurnoverTable <-
+    duPontTable %>% 
+    mutate( Asset.Turnover = Gross.Revenue/Total.Assets  )
+  return( assetTurnoverTable ) 
+}
+
+calculateReturnOnAsset <- function( duPontTable ){
+  roaTable <-
+    duPontTable %>% 
+    mutate( Return.On.Asset = Return.On.Sales/Asset.Turnover  )
+  return( roaTable ) 
+}
 
 

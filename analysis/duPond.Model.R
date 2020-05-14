@@ -122,18 +122,20 @@ duPont.ModelTree <- function ( symbol ) {
     duPont %>% 
     select( Year, 
            symbol, 
+           
+           Debt.To.Asset, 
+           Asset.To.Equity, 
+           Debt.To.Equity,
            Gross.Profit.Margin,
-           Operating.Margin,
            Interest.Coverage,
            Net.Profit.Margin,
+           Operating.Margin,
            Return.On.Sales,
            Asset.Turnover, 
            Return.On.Asset,
-           Return.On.Equity,
-           Debt.To.Asset, 
-           Debt.To.Equity,
-           Asset.To.Equity )
+           Return.On.Equity
+           )
 
-  return( duPont ) 
+  return( duPontRatios ) 
 
 }

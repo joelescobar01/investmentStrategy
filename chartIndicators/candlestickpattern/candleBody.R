@@ -3,8 +3,7 @@
 CandleBodyLength <- function(stockTbbl) {
   candle <- 
     stockTbbl %>% 
-    mutate( candle.body.length = abs( open - close ) ) %>% 
-    select( date, candle.body.length ) 
+    mutate( candle.body.length = abs( open - close ) ) 
   return(candle ) 
 }
 
@@ -13,8 +12,7 @@ CandleBodyLength <- function(stockTbbl) {
 CandleStickLength <- function(stockTbbl) {
   candle <-
     stockTbbl %>% 
-    mutate( candle.stick.length = high - low ) %>% 
-    select( date, candle.stick.length )
+    mutate( candle.stick.length = high - low ) 
   return( candle ) 
 }
 
@@ -24,8 +22,7 @@ CandleStickLength <- function(stockTbbl) {
 CandleBodyTop <- function(stockTbbl) {
   candle <-
     stockTbbl %>% 
-    mutate( candle.body.top = pmax( open, close ) ) %>% 
-    select( date, candle.body.top ) 
+    mutate( candle.body.top = pmax( open, close ) ) 
   return(candle)
 }
 
@@ -34,8 +31,7 @@ CandleBodyTop <- function(stockTbbl) {
 CandleBodyBottom <- function(stockTbbl) {
   candle <- 
     stockTbbl %>% 
-    mutate( candle.body.bottom = pmin( open, close ) ) %>% 
-    select( date, candle.body.bottom ) 
+    mutate( candle.body.bottom = pmin( open, close ) ) 
   return(candle)
 }
 
@@ -44,8 +40,7 @@ CandleBodyBottom <- function(stockTbbl) {
 CandleBodyCenter <- function(stockTbbl) {
   candle <- 
     stockTbbl %>% 
-    mutate( candle.body.center = (open+close)/2 ) %>% 
-    select( date, candle.body.center ) 
+    mutate( candle.body.center = (open+close)/2 ) 
 
   return( candle ) 
 }

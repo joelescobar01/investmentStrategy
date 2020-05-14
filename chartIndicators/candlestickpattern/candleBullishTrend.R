@@ -1,57 +1,46 @@
 #' Determine bullish candle using a OHLC price series
 #' @param x OHLC prices.
 #' @return TRUE if bullish candle detected
-bullish.candle <- function(x) {
-  OP <- quantmod::Op(x)
-  Cl <- quantmod::Cl(x)
+BullishCandle <- function(stockTbbl) {
+candle <- 
+    stockTbbl %>% 
+    mutate( bullish.candle = open < close ) 
 
-  result <- xts::reclass(OP < Cl, x)
-  colnames(result) <- "bullish candle"
-  return(result)
+  return( candle ) 
 }
-
 #' Determine bullish engulfing pattern using a OHLC price series
 #' @param x OHLC prices.
 #' @return TRUE if hammer pattern detected
-bullish.engulf <- function(x) {
-  BT <- CandleBodyTop(x)
-  BB <- CandleBodyBottom(x)
+BullishEngulf <- function( stockTbbl ){
+  candle <-
+    stock %>% 
+    CandleBodyTop( ) %>% 
+    CandleBodyBottom() %>% 
+    BearishCandle() %>% 
+    BullishCandle() %>% 
+    mutate( bullish.engulfing = bullish.candle & 
+                                lag(bearish.candle ) & 
+                                candle.body.top >= lag( candle.body.top ) & 
+                                candle.body.bottom <= lag( candle.body.bottom )) 
 
-  Lag.BT <- quantmod::Lag(BT)
-  Lag.BB <- quantmod::Lag(BB)
+  return( candle ) 
 
-  U <- bullish.candle(x)
-  D <- bearish.candle(x)
-
-  Lag.D <- quantmod::Lag(D)
-
-  result <- xts::reclass(U  &
-                    Lag.D &
-                    BT >= Lag.BT &
-                    BB <= Lag.BB, x)
-  colnames(result) <- "bullish engulfing"
-  return(result)
 }
 
 #' Determine bullish harami pattern using a OHLC price series
 #' @param x OHLC prices.
 #' @return TRUE if bullish harami  pattern detected
-bullish.harami <- function(x) {
-  BT <- CandleBodyTop(x)
-  BB <- CandleBodyBottom(x)
+BullishHarami <- function( stockTbbl ) {
+  candle <- 
+    stockTbbl %>% 
+    CandleBodyTop() %>% 
+    CandleBodyBottom() %>% 
+    BullishCandle() %>% 
+    BearishCandle() %>% 
+    mutate( bullish.harami =  bullish.candle & 
+                              lag( bearish.candle ) & 
+                              candle.body.top <= lag( candle.body.top ) &
+                              candle.body.bottom >= lag( candle.body.bottom ) )
+    return( candle ) 
 
-  Lag.BT <- quantmod::Lag(BT)
-  Lag.BB <- quantmod::Lag(BB)
-
-  U <- bullish.candle(x)
-  D <- bearish.candle(x)
-
-  Lag.D <- quantmod::Lag(D)
-
-  result <- xts::reclass(U  &
-                      Lag.D &
-                      BT <= Lag.BT &
-                      BB >= Lag.BB, x)
-  colnames(result) <- "bullish harami"
-  return(result)
 }

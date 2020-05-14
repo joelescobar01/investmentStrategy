@@ -368,4 +368,21 @@ addLiabilitiesTableRowNames <- function( liabilitiesTbl, liabilitiesMatrix,
 }
 
 
+runFundamentals <- function( sectorList ){
+  for( ii in seq_along( sectorList )){
+    print(ii)
+    ticker <- sectorList[ii] 
+    print(ticker)
 
+    ratios <- duPont.ModelTree( ticker ) 
+    #write_excel_csv( ratios, "/home/joel/Documents/stocks/analysis/materialsFundmentals", append=TRUE) 
+    ratiosMean <- ratios %>% summarise_if( is.numeric, list( mean=mean ), na.rm=TRUE )
+
+    write_excel_csv( ratiosMean, "/home/joel/Documents/stocks/analysis/materialsFundmentals2", append=TRUE)
+    ratiosSD <- ratios %>% summarise_if( is.numeric, list( sd ), na.rm=TRUE )
+    write_excel_csv( ratiosSD, "/home/joel/Documents/stocks/analysis/materialsFundmentals2", append=TRUE)
+
+
+  }
+
+}
