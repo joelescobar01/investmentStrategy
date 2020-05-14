@@ -5,7 +5,6 @@ fromDate <- Sys.Date() - 180
 
 directory <- paste( getwd(), "research", format(Sys.time(), "%a_%b_%d_%Y"), sep="/" )
 
-
 buyReportMaterials <- function(){
   directory <- paste( directory, "materials", sep="/" )
   dir.create(directory, showWarnings = FALSE, recursive = FALSE, mode = "0777" ) 
@@ -25,10 +24,6 @@ generateBuyReport <- function(  symbols=c() ){
     if(is.null(data1)) next() 
     if( data1 %>% tally() < 30 )
       next()
-   
-    
-    #tempData <- 
-    #  data1 
     
     macd.Signal <- 
       signal.Buy.MACD( data1 )
@@ -47,19 +42,6 @@ generateBuyReport <- function(  symbols=c() ){
     generate.BAR.Report( data1, symbol=symbols[ii] ) 
       
   }
-}
-
-
-
-generate.RSI.Report <- function( plotRSI, symbol){ 
-  #rsiTbbl <- 
-  #  rsi.Interface( stockTbbl )
-  filename <- paste( symbol, "RSI.jpg", sep="_" )
-  filename <- paste( directory, filename, sep="/" )
-  print("Generating RSI Report")
-  jpeg(filename, width = 1080, height = 720)
-  print(plotRSI)      
-  dev.off(  )
 }
 
 generate.MACD.Report <- function( plotMACD, symbol){
@@ -81,50 +63,4 @@ generate.BAR.Report <- function( stockTbbl, symbol){
   plot( chart.BAR( stockTbbl, symbol ))      
   dev.off(  )
 }
-
-directory <- paste( getwd(), "research", format(Sys.time(), "%a_%b_%d_%Y"), sep="/" )
-
-daily.Buy.Report <- function( stockTbbl, dir=directory, symbol="DailyBuyReport" ){
-  subdirectory <- paste(dir, symbol, "", sep="/" )
-
-    #filename <- paste( subdirectory,"Bar.jpg", sep="" )
-    #if(!file.exists(filename) ){
-    #print("Generating Bar Report")
-    #jpeg(filename, width = 1080, height = 720)
-    #plot( chart.BAR( stocktTb ))
-    #dev.off()
-    #if(file.exists(filename))
-    #  print("Finished Report")    
-    #else {
-    #  print("Had problem saving to file ")
-    #}    
-  #}#
-
-    filename <- paste( subdirectory,"RSI.jpg", sep="" )
-    if(!file.exists(filename) ){
-      print("Generating RSI Report")
-      jpeg(filename, width = 1080, height = 720)
-      plot(chart.RSI( rsiAlarm ))      
-      dev.off(  )
-      if(file.exists(filename))
-        print("Finished Report")    
-      else {
-        print("Had problem saving to file ")
-      }
-    }
-
-    filename <- paste( subdirectory,"MACD.jpg", sep="" )
-    if(!file.exists(filename) ){
-      jpeg(filename, width = 1080, height = 720)
-      #plot(generateMACDReport(stockDF,symbol))
-      plot(chart.MACD(macdAlarm))
-      dev.off()
-      if(file.exists(filename))
-        print("Finished Report")    
-      else {
-        print("Had problem saving to file ")
-      }
-    }
-}
-
 

@@ -1,4 +1,4 @@
-
+library(tidyverse) 
 
 calculateGrossProfit <- function( incomeStatementTbl ){
   incomeStatementTbl <- 
@@ -6,6 +6,7 @@ calculateGrossProfit <- function( incomeStatementTbl ){
     mutate( Gross.Profit.Margin = Gross.Income/Gross.Revenue ) 
   
 }
+
 calculateOperatingMargin <- function( incomeStatementTbl ){
   incomeStatementTbl <- 
     incomeStatementTbl %>% 
@@ -49,27 +50,9 @@ calculateReturnOnAsset <- function( duPontTable ){
   return( roaTable ) 
 }
 
-calculateReturnOnEquity <- function( duPontTable ){
-  roaTable <-
-    duPontTable %>% 
-    mutate( Return.On.Equity = Return.On.Asset* (Total.Assets/Total.Equity)  )
-  return( roaTable ) 
-}
-
-
-calculateDebtToAsset <- function( liabilitiesTable, assetTable ){
-  liabilities <-
-    liabilitiesTable %>% 
-    select( Year, Total.Liabilities ) 
-
-  assets <-
-    assetTable %>% 
-    select( Year, Total.Assets ) 
-
-
+calculateDebtToAsset <- function( balanceSheet ){
   debtAsset <- 
-    liabilities %>% 
-    inner_join( assets ) %>% 
+    balanceSheet %>% 
     mutate( Debt.To.Asset = Total.Liabilities/ Total.Assets ) 
 
   return(debtAsset ) 
@@ -78,8 +61,24 @@ calculateDebtToAsset <- function( liabilitiesTable, assetTable ){
 calculateDebtToEquity <- function( liabilitiesTable ){
   debtToEquity <-
     liabilitiesTable %>% 
-    mutate( Debt.To.Ratio = Total.Liabilities/Total.Equity ) 
-  return( ) 
+    mutate( Debt.To.Equity = Total.Liabilities/Total.Equity ) 
+  return( debtToEquity ) 
 }
+
+calculateEquityMultiplier <- function( balanceSheet ){
+  equityMultiply <- 
+    balanceSheet %>% 
+    mutate( Asset.To.Equity = Total.Assets/Total.Equity ) 
+
+  return( equityMultiply ) 
+}
+
+calculateReturnOnEquity <- function( duPontTable ){
+  roaTable <-
+    duPontTable %>% 
+    mutate( Return.On.Equity = Return.On.Asset*Asset.to.Equity  )
+  return( roaTable ) 
+}
+
 
 

@@ -1,6 +1,7 @@
 library(tidyverse)
 library(ggplot2)
 library(tidyquant)
+library(ggpubr) 
 
 chart.VolatilityCloseToClose <- function( stockOHLC, endDate=Sys.Date(), startDate=Sys.Date()-90, 
                                          plotTitle="Volatility Close Chart 0.1"){

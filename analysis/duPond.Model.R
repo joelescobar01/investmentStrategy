@@ -1,6 +1,6 @@
 library(tidyverse)
 source("financialRatios.R")
-source("fundamentalAnalysis.R")
+source("/home/joel/Documents/stocks/analysis/fundamentalAnalysis.R")
 
 
 generateAssetTable <- function( currentAssetTbl, totalAssetTbl ){
@@ -61,10 +61,17 @@ balanceSheet.ModelTree <- function( symbol ) {
   balanceSheetTable <- 
     inner_join( assetTable, liabilities ) %>% 
     mutate( symbol=symbol ) %>% 
-    select( symbol, everything() ) %>% 
-    mutate( Debt.To.Asset = Total.Liabilities/Total.Assets ) %>%
-    mutate( Debt.To.Equity = Total.Liabilities/Total.Equity)%>% 
-    mutate( Equity.Multiplier = Total.Assets/Total.Equity ) 
+    select( symbol, everything() )
+  balanceSheetTable <-
+    balanceSheetTable %>% 
+    calculateDebtToAsset( ) 
+    
+  balanceSheetTable <- 
+    balanceSheetTable %>% 
+    calculateDebtToEquity()
+  balanceSheetTable <- 
+    balanceSheetTable %>% 
+    calculateEquityMultiplier() 
 
     return( balanceSheetTable ) 
 }
@@ -84,32 +91,49 @@ duPont.ModelTree <- function ( symbol ) {
     calculateReturnOnAsset()
   duPont <-
     duPont %>% 
-    mutate( Return.On.Equity = Return.On.Asset*Equity.Multiplier )
-    
+    calculateReturnOnEquity() 
+
   #order 
-  duPont <- 
-    duPont %>% 
-    select( Year,
-            symbol,
-            Gross.Revenue, 
-            COGS.DA, 
-            Gross.Income, 
-            Non.Product.Cost.SGA, 
-            Interest.Expenses,	
-            Pretax.Income, 
-            Net.Income, 
-            EBITDA, 
-            Cash.ST.Investments, 
-            Total.Accounts.Receivable, 
-            Inventories, 
-            Total.Current.Assets, 
-            Net.Property, 
-            Total.Assets, 
-            Total.Liabilities, 
-            Total.Shareholder.Equity, 
-            Total.Equity, 
-            everything())
+  #duPont <- 
+  #  duPont %>% 
+  #  select( Year,
+  #          symbol,
+  #          Gross.Revenue, 
+  #          COGS.DA, 
+  #          Gross.Income, 
+  #          Non.Product.Cost.SGA, 
+  #          Interest.Expenses,	
+  #          Pretax.Income, 
+  #          Net.Income, 
+  #          EBITDA, 
+  #          Cash.ST.Investments, 
+  #          Total.Accounts.Receivable, 
+  #          Inventories, 
+  #          Total.Current.Assets, 
+  #          Net.Property, 
+  #          Total.Assets, 
+  #          Total.Liabilities, 
+  #          Total.Shareholder.Equity, 
+  #          Total.Equity, 
+  #          everything())
   
+
+  duPontRatios <-
+    duPont %>% 
+    select( Year, 
+           symbol, 
+           Gross.Profit.Margin,
+           Operating.Margin,
+           Interest.Coverage,
+           Net.Profit.Margin,
+           Return.On.Sales,
+           Asset.Turnover, 
+           Return.On.Asset,
+           Return.On.Equity,
+           Debt.To.Asset, 
+           Debt.To.Equity,
+           Asset.To.Equity )
+
   return( duPont ) 
 
 }

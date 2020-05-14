@@ -1,0 +1,27 @@
+x11()
+ggarrange( sp500p1+verticalLine, p1+verticalLine, ncol=1, nrow=2, align="v" )
+sp500Stock
+sp500Stock %>% group_by( symbol ) %>% tq_transmute(select = close, mutate_fun = periodReturn,
+sp500Stock %>% group_by( symbol ) %>% tq_transmute(select = adjusted, mutate_fun = periodReturn, period = "daily", type='log' ) 
+sp500Returns <- sp500Stock %>% group_by( symbol ) %>% tq_transmute(select = adjusted, mutate_fun = periodReturn, period = "daily", type='log' ) 
+stockReturns <- stock %>% grtq_transmute(select = adjusted, mutate_fun = periodReturn, period = "daily", type='log' ) 
+stockReturns
+baseComparison <- left_join( stockReturns, sp500Returns, by=c("date"=="date") ) 
+baseComparison <- left_join( stockReturns, sp500Returns, by = c("date"=="date") ) 
+baseComparison <- left_join( stockReturns, sp500Returns, by = c("date" = "date") ) 
+baseComparison
+sp500Returns <- sp500Stock %>% tq_transmute(select = adjusted, mutate_fun = periodReturn, period = "daily", type='log' ) 
+sp500Returns
+baseComparison <- left_join( stockReturns, sp500Returns, by = c("date" = "date") ) 
+baseComparison
+sp500Returns <- sp500Stock %>% tq_transmute(select = adjusted, mutate_fun = periodReturn, period = "daily", type='log', col_rename="AA.Returns" ) 
+baseComparison <- left_join( stockReturns, sp500Returns, by = c("date" = "date") ) 
+baseComparison
+stockReturns
+baseComparison
+history
+history()
+history() %>% print() 
+sink( "/home/joel/Documents/stocks/notes.txt" ) 
+history()
+

@@ -2,9 +2,7 @@ library(TTR)
 library(tidyverse)
 library(tidyquant)
 library(ggplot2)
-#source("analysis/riskAnalysis.R", chdir=T )
-#source("lib/utils.R")
-#source("var/settings.R")
+
 
 # finds stocks that signal a nearby buy 
 #signal.MACD.BUY <- function( stockTbbl, nDays=7 ){

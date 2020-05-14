@@ -1,0 +1,3 @@
+verticalLine <- 
+geom_vline(  xintercept=( startTime + months(3) ), alpha=0.5, linetype='dashed', color='black' )
+ggarrange( p1+verticalLine, p2+verticalLine, ncol=1, nrow=2, align='v' ) 

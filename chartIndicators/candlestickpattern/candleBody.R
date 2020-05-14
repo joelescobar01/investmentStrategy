@@ -1,46 +1,53 @@
+#' @param x OHLC prices.
+#' @return length of candle body
+CandleBodyLength <- function(stockTbbl) {
+  candle <- 
+    stockTbbl %>% 
+    mutate( candle.body.length = abs( open - close ) ) %>% 
+    select( date, candle.body.length ) 
+  return(candle ) 
+}
+
+#' @param x OHLC tibble.
+#' @return length of candle body
+CandleStickLength <- function(stockTbbl) {
+  candle <-
+    stockTbbl %>% 
+    mutate( candle.stick.length = high - low ) %>% 
+    select( date, candle.stick.length )
+  return( candle ) 
+}
+
+
+#' @param x OHLC tibble.
+#' @return top of candle body
+CandleBodyTop <- function(stockTbbl) {
+  candle <-
+    stockTbbl %>% 
+    mutate( candle.body.top = pmax( open, close ) ) %>% 
+    select( date, candle.body.top ) 
+  return(candle)
+}
 
 #' @param x OHLC prices.
 #' @return bottom of candle body
-CandleBodyBottom <- function(x) {
-  BT <- pmin(quantmod::Op(x), quantmod::Cl(x))
-  result <- xts::reclass(BT, x)
-  colnames(result) <- "CandleBodyBottom"
-  return(result)
+CandleBodyBottom <- function(stockTbbl) {
+  candle <- 
+    stockTbbl %>% 
+    mutate( candle.body.bottom = pmin( open, close ) ) %>% 
+    select( date, candle.body.bottom ) 
+  return(candle)
 }
 
 #' @param x OHLC prices.
 #' @return center of candle body
-CandleBodyCenter <- function(x) {
-  BC <- (quantmod::Op(x) + quantmod::Cl(x))/2
-  result <- xts::reclass(BC, x)
-  colnames(result) <- "CandleBodyCenter"
-  return(result)
-}
+CandleBodyCenter <- function(stockTbbl) {
+  candle <- 
+    stockTbbl %>% 
+    mutate( candle.body.center = (open+close)/2 ) %>% 
+    select( date, candle.body.center ) 
 
-#' @param x OHLC prices.
-#' @return length of candle body
-CandleBodyLength <- function(x) {
-  BL <- abs(quantmod::Op(x) - quantmod::Cl(x))
-  result <- xts::reclass(BL, x)
-  colnames(result) <- "CandleBodyLength"
-  return(result)
+  return( candle ) 
 }
 
 
-#' @param x OHLC prices.
-#' @return top of candle body
-CandleBodyTop <- function(x) {
-  BT <- pmax(quantmod::Op(x), quantmod::Cl(x))
-  result <- xts::reclass(BT, x)
-  colnames(result) <- "CandleBodyTop"
-  return(result)
-}
-
-#' @param x OHLC prices.
-#' @return TRUE if Dragon Doji pattern detected
-CandleStickLength <- function(x) {
-  WC <- quantmod::Hi(x) - quantmod::Lo(x)
-  result <- xts::reclass(WC, x)
-  colnames(result) <- "CandleStickLength"
-  return(result)
-}
