@@ -1,37 +1,73 @@
-source("../../chartIndicators/candlestickPatterns.R")
+source("../../chartIndicators/candlestickPatternIdentifier.R")
 context("Checking Doji")
 
- library(quantmod)
- getSymbols("MSFT")
+library(tidyverse)
+library(tidyquant)
+
+
+msft <- 
+  tq_get( "MSFT", 
+         get='stock.prices' ) 
 
 test_that("Doji", {
-  x <- doji(MSFT)
-  expect_true(x['2011-07-11'])
-  expect_true(x['2011-07-12'])
-  expect_true(x['2011-07-13'])
-  expect_false(x['2011-07-14'])
-  expect_false(x['2011-07-15'])
-  expect_true(x['2011-07-18'])
-  expect_false(x['2011-07-19'])
+  x <- 
+    msft %>% 
+    filter( date >= '2011-07-11' & date <= '2011-07-19' ) %>% 
+    Doji( ) %>% 
+    select( date ) %>% 
+    pull() 
+  expect_true( ymd('2011-07-12') %in% x  )
+  expect_true( ymd('2011-07-12') %in% x )
+  #expect_true(x['2011-07-13'])
+  expect_false(ymd('2011-07-14') %in% x )
+  #expect_false(x['2011-07-15'])
+  #expect_true(x['2011-07-18'])
+  #expect_false(x['2011-07-19'])
 })
 
 test_that("Dragonfly Doji", {
-  x <- dragonfly.doji(MSFT)
-  expect_false(x['2014-10-30'])
-  expect_true(x['2014-10-31'])
-  expect_false(x['2014-11-03'])
+  x <- 
+    msft %>% 
+    filter( date >= '2014-10-30' & date <= '2014-11-03' ) %>% 
+    DragonflyDoji( ) %>% 
+    select( date ) %>% 
+    pull() 
+  expect_false(ymd('2014-10-30') %in% x )
+  expect_true(ymd('2014-10-31') %in% x)
+  expect_false(ymd('2014-11-03') %in% x )
 })
 
 
 test_that("Gravestone Doji", {
-  x <- gravestone.doji(MSFT)
-  expect_false(x['2015-04-29'])
-  expect_true(x['2015-04-30'])
-  expect_false(x['2015-05-01'])
+  x <- 
+    msft %>% 
+    filter( date >= '2015-04-29' & date <= '2015-05-01' ) %>% 
+    GravestoneDoji( ) %>% 
+    select( date ) %>% 
+    pull() 
+  expect_false(ymd('2015-04-29') %in% x)
+  expect_true(ymd('2015-04-30') %in% x )
+  expect_false(ymd('2015-05-01') %in% x)
 
 })
 
-# hammer
+test_that("Hammer", {
+  x <- 
+    msft %>% 
+    filter( date >= '2011-10-18' & date <= '2011-10-25' ) %>% 
+    Hammer( ) %>% 
+    select( date ) %>% 
+    pull() 
+  
+  expect_false(ymd('2011-10-18') %in% x)
+  expect_false(ymd('2011-10-19') %in% x)
+  expect_true( ymd('2011-10-21') %in% x)
+  expect_false(ymd('2011-10-25') %in% x)
+})
+
+
+
+# hammer 
 # 2011-10-18  false
 # 2011-10-19  false
 # 2011-10-20  false
@@ -41,6 +77,21 @@ test_that("Gravestone Doji", {
 
 #x <- inverted.hammer(msft)
 #x['2011-11-20/2011-11-30']
+test_that("Inverted Hammer", {
+  x <- 
+    msft %>% 
+    filter( date >= '2011-11-21' & date <= '2011-11-30' ) %>% 
+    InvertedHammer( ) %>% 
+    select( date ) %>% 
+    pull() 
+  
+  expect_false(ymd('2011-11-21') %in% x)
+  expect_false(ymd('2011-11-22') %in% x)
+  expect_true( ymd('2011-11-25') %in% x)
+  expect_false(ymd('2011-11-28') %in% x)
+  expect_false(ymd('2011-11-29') %in% x)
+  expect_false(ymd('2011-11-30') %in% x)
+})
 
 # inverted hammer
 # 2011-11-21           false

@@ -19,12 +19,17 @@ library(tidyquant)
 #movement patterns 
 
 
-chart.CandleStick.Recognizer <- function( stockTbbl ) {  
+chart.CandleStick <- function( stockTbbl, plotTitle="Candlestick Version 0.1" ) {  
 
     g1 <- 
     ggplot( stockTbbl, aes( x=date ) ) + 
     geom_candlestick(aes(open = open, high = high, low = low, close = close)) +
-    #geom_rect(data=patternTbbl, aes( ymin=low, ymax=high, xmin=date-days(1), xmax=date+days(1)),alpha=0.5) +
+    labs(title = "Candlestick Chart", 
+         y = "Closing Price", 
+         x = "") + 
+    scale_x_date( date_labels="%m/%Y",
+                  breaks = '1 months',
+                  minor_breaks = '2 weeks') +
     theme() 
   
   return(g1) 

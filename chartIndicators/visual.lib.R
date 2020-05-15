@@ -32,3 +32,7 @@ chart.Add.HLine <- function( yIntercept, lineT="dashed", ... ){
   return( geom_line( yIntercept, linetype=lineT, ... ) ) 
 }
 
+
+localMin <- function( stockTbbl ){
+
+}

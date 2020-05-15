@@ -8,7 +8,9 @@ Doji <- function(stockTbbl, delta = 0.1) {
     stockTbbl %>% 
     CandleStickLength() %>% 
     CandleBodyLength() %>% 
-    mutate( doji = delta*candle.stick.length >= candle.body.length ) 
+    mutate( doji = delta*candle.stick.length >= candle.body.length ) %>%
+    filter( doji == TRUE ) 
+  
   return(candle)
 }
 #' Determine Dragon Doji Pattern using a OHLC price series
@@ -21,7 +23,8 @@ DragonflyDoji <- function(stockTbbl, delta=0.1) {
     CandleStickLength() %>% 
     UpperShadowLength() %>% 
     Doji() %>%
-    mutate( dragonfly.doji = delta*candle.stick.length >= upper.shadow.length & doji ) 
+    mutate( dragonfly.doji = delta*candle.stick.length >= upper.shadow.length & doji ) %>%
+    filter( dragonfly.doji == TRUE ) 
   return(candle)
 }
 
@@ -36,6 +39,7 @@ GravestoneDoji <- function(stockTbbl,delta=0.1) {
     CandleStickLength() %>% 
     LowerShadowLength() %>% 
     Doji() %>%
-    mutate( gravestone.doji = delta*candle.stick.length >= lower.shadow.length & doji ) 
+    mutate( gravestone.doji = delta*candle.stick.length >= lower.shadow.length & doji ) %>% 
+    filter( gravestone.doji == TRUE ) 
   return(candle)
 }

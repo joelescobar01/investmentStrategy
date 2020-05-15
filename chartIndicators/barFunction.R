@@ -2,72 +2,24 @@ library( tidyquant )
 library( ggplot2 ) 
 library( tidyverse)
 
-discreteSecondOrder <- function ( consecutiveVal ){
-  
-  oneDayAgo <- NULL 
-  twoDayAgo <- NULL 
-  derivative <- c( NA, NA )
-  for(ii in seq_along(consecutiveVal) ){
-    if( ii == 1 ){
-      next()
-    }
-    if( ii == 2 ){
-      oneDayAgo = consecutiveVal[ii]
-      twoDayAgo = consecutiveVal[ii-1]
-      next() 
-    }
-    currentDay <- consecutiveVal[ii]
-    derivative[ii] <- sign(( currentDay - 2*oneDayAgo + twoDayAgo )/2 )
-    twoDayAgo = oneDayAgo 
-    oneDayAgo = currentDay 
-  }
-
-  return(derivative) 
+findDiscreteSlope <- function( stockTbbl ){
+  slopeTbbl <-
+    stockTbbl %>% 
+    mutate_at( c("open","high","low","close"), ~(lead(.) - .) ) %>% 
+    select( date, symbol, open, high, low, close ) 
+  return( slopeTbbl )
 }
 
-discreteFirstOrder <- function( consecutiveVal ){
-  oneDayAgo <- NULL 
-  derivative <- c(NA) 
-  for(ii in seq_along(consecutiveVal)){
-    if( ii == 1 ){
-      oneDayAgo = consecutiveVal[ii] 
-      next() 
-    }
-
-    currentDay <- consecutiveVal[ii]
-    derivative[ii] <- sign( currentDay - oneDayAgo  ) 
-    oneDayAgo = currentDay
-  }
-
-  return(derivative)
+findDiscreteMin <- function( stockTbbl ){
+  localMin <-
+    stockTbbl %>%  
+    findDiscreteSlope %>% 
+    mutate_at( c("open", "high", "low", "close" ), ~(sign(lead(.)) - sign(.)) ) %>%
+    filter( close == 2 ) %>% 
+    select( date ) %>% 
+    left_join( stockTbbl ) 
+  return(localMin)
 }
-
-#findPeakValley <- function( stocktTbbl, type=1 ){
-  #type 1 for local min
-  #type -1 for local max 
-#  stockTbbl <- 
-#    stockTbbl %>% 
-#    select(close) %>% 
-#    pull() %>% 
-#    discreteFirstOrder() %>% 
-#    mutate( stockTbbl, first.order= .)
-  
-#  stockTbbl <- 
-#    stockTbbl %>% 
-#    select(close) %>% 
-#    pull() %>% 
-#    discreteSecondOrder() %>% 
-#    mutate( stockTbbl, second.order= .)
-  #return(minMax) 
-#}
-
-#findValley <- function( stocktTbbl ){
-#  return( findPeakValley( stockTbbl, type=1 ) )
-#}
-
-#findPeak <- function( stocktTbbl ){
-#  return( findPeakValley( stockTbbl, type=-1 ) )
-#}
 
 chart.BAR <- function( stockTbbl, plotTitle=NA ){ 
  
@@ -114,6 +66,49 @@ chart.BAR <- function( stockTbbl, plotTitle=NA ){
       theme_gray() 
     return(g1) 
 }
+
+
+
+
+chart.BAR2 <- function( stockTbbl, plotTitle=NA ){ 
+  slopeTbbl <- 
+    stockTbbl %>% 
+    findDiscreteSlope() 
+
+  localMin <- 
+    stockTbbl %>% 
+    findDiscreteMin()
+
+  zeroSlope <- 
+    slopeTbbl %>% 
+    filter( close == 0.00 ) %>%
+    select( date ) %>% 
+    pull() 
+
+  zeroSlope <- 
+    stockTbbl %>% 
+    filter( date == zeroSlope ) 
+
+  print(localMin ) 
+
+    g1 <- 
+    stockTbbl %>% 
+      ggplot( aes(y=close, x=date) ) + 
+      geom_barchart(aes(open = open, high = high, low = low, close = close)) + 
+      geom_ma(color = "darkgreen")  +
+      geom_point(data=zeroSlope, aes( x=date, y=close ), color="red", alpha = 0.4, size=3 ) +
+      geom_point(data=localMin, aes( x=date, y=close ), color="blue", alpha = 0.4, size=3 ) +
+      scale_x_date( date_breaks = '1 month', 
+                    date_labels = "%b",
+                    minor_breaks = '2 weeks' ) +
+      labs( title=plotTitle, 
+            y="Closing Price", 
+            x="Date") +
+      theme_gray() 
+    return(g1) 
+}
+
+
 
 chart.BAR.RSI <- function( stockTbbl, plotTitle=NA ){ 
  
