@@ -1,7 +1,7 @@
 #' Determine gap down using a OHLC price series
 #' @param x OHLC prices.
 #' @return TRUE if bullish candel detected
-gap.down <- function(stockTbbl) {
+GapDown <- function(stockTbbl) {
   candle <- 
     stockTbbl %>% 
     mutate( gap.down = pmax( open, close ) - pmin( lag(close), lag(open) ))
@@ -16,7 +16,7 @@ gap.down <- function(stockTbbl) {
 #' Determine gap up using a OHLC price series
 #' @param x OHLC prices.
 #' @return TRUE if bullish candel detected
-gap.up <- function( stockTbbl ){
+GapUp <- function( stockTbbl ){
   candle <- 
     stockTbbl %>% 
     mutate( gap.up = pmin( open, close ) - pmax( lag(close), lag(open) ))

@@ -4,7 +4,7 @@
 #' @param S number of short period for short-run moving average
 #' @param L number of short period for short-run SMA
 #' @return length of upper shadow
-down.trend <- function(stockTbbl, delta=0.01, S=5, L=20) {
+DownTrend <- function(stockTbbl, delta=0.01, S=5, L=20) {
   candle <- 
     stockTbbl %>% 
     tq_mutate( select= close, 
@@ -30,7 +30,7 @@ down.trend <- function(stockTbbl, delta=0.01, S=5, L=20) {
 #' @param S number of short period for short-run moving average
 #' @param L number of short period for short-run SMA
 #' @return length of upper shadow
-up.trend <- function(stockTbbl, delta=0.01, S=5, L=20) {
+UpTrend <- function(stockTbbl, delta=0.01, S=5, L=20) {
   candle <- 
     stockTbbl %>% 
     tq_mutate( select= close, 
@@ -49,3 +49,4 @@ up.trend <- function(stockTbbl, delta=0.01, S=5, L=20) {
 
   return(candle)
 }
+

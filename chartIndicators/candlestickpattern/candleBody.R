@@ -45,4 +45,19 @@ CandleBodyCenter <- function(stockTbbl) {
   return( candle ) 
 }
 
+CandleBodyWideRange <- function( stockTbbl, delta=2 ){
+  candle <- 
+    stockTbbl %>% 
+    mutate( daily.volatility = abs(close - open ) ) %>% 
+    tq_mutate( select=daily.volatility, 
+                mutate_fun=runVar, 
+                n=10,
+                col_rename="volatility.moving.avg" ) 
 
+  candle <-
+    candle %>% 
+    mutate( wide.range = daily.volatility >= delta*volatility.moving.avg ) 
+
+  return( candle ) 
+
+}

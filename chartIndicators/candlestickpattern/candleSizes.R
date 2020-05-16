@@ -17,15 +17,14 @@ long.candle <- function(x, n=20, delta=1) {
 #' @param n period
 #' @param delta sensitivity parameter
 #' @return TRUE if long candle detected
-long.candle2 <- function(stockTbbl, n=10, delta=0.1) {
+LongCandle <- function(stockTbbl, n=10, delta=3) {
   candle <- 
     CandleBodyLength(stockTbbl) %>% 
     tq_mutate(  select= candle.body.length, 
                   mutate_fun = runMedian, 
                   n=n,
                   col_rename="n.median") %>%
-    drop_na() %>% 
-    transmute( long.candle = candle.body.length >= n.median*delta ) 
+    mutate( long.candle = candle.body.length >= n.median*delta ) 
   return(candle)
 }
 #' Determine short candle using a OHLC price series
@@ -47,15 +46,14 @@ short.candle <- function(x, n=20, delta=1) {
 #' @param n period
 #' @param delta sensitivity parameter
 #' @return TRUE if short candle detected
-short.candle2 <- function(stockTbbl, n=10, delta=1) {
+ShortCandle <- function(stockTbbl, n=10, delta=3) {
   candle <- 
     CandleBodyLength(stockTbbl) %>% 
     tq_mutate(  select= candle.body.length, 
                   mutate_fun = runMedian, 
                   n=n,
                   col_rename="n.median") %>%
-    drop_na() %>% 
-    transmute( long.candle = candle.body.length <= n.median*delta ) 
+    mutate( short.candle = candle.body.length <= n.median*delta ) 
   return(candle)
 }
 #' Determine short shadow using a OHLC price series

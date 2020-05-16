@@ -1,54 +1,6 @@
 library(TTR)
 source('visual.lib.R')
-#source("lib/utils.R")
-#source("var/settings.R")
-
-stockSmaRSI <- function( stockDF, pastDays=14 ){
-    rsi <- 
-        RSI(Cl(stockDF), 
-            SMA, n=pastDays)
-    return( rsi) 
-}
-stockEmaRSI <- function( stockDF, pastDays=14 ){
-    
-    rsi <- 
-        RSI(Cl(stockDF), 
-            EMA, 
-                n=pastDays)
-    return( rsi) 
-}
-
-rsiSetup <- function(rsiDataFrame){
-    rsiSignal <- c() 
-    for(i in 1:nrow(rsiDataFrame) ){
-        if( rsiDataFrame$rsi[i] > rsiOverboughtConstant ){
-            rsiSignal[i] = 1 
-        } else if( rsiDataFrame$rsi[i] < rsiOversoldConstant ){
-            rsiSignal[i] = -1 
-        } else {
-            rsiSignal[i] = 0 
-        }
-    }
-    return( rsiSignal ) 
-}
-
-rsibuyxvalues <- function(buydates, startdate ){
-    buyxvalues <- c()
-    buydates <- buydates[ buydates > startdate ]
-    for( i in 1:length(buydates) ){
-        buyxvalues[i] <- businessdaycounter(startdate, buydates[i])
-    }
-    return( buyxvalues )
-}
-
-rsisellxvalues <- function(selldates, startdate ){
-    sellxvalues <- c() 
-    selldates <- selldates[ selldates > startdate ]
-    for( i in 1:length(selldates) ){
-        sellxvalues[i] <- businessdaycounter( startdate, selldates[i])
-    }
-    return( sellxvalues ) 
-}
+#source("lib/utils.R") #source("var/settings.R")
 
 rsi.Interface <- function( stockTbbl){
   stock.RSI.Tb <- 
@@ -115,12 +67,6 @@ signal.Buy.RSI <- function( stockTbbl ){
   }
 }
 chart.Stock.Rsi <- function( stockTbbl ){
-  symbol <- 
-    stockTbbl %>% 
-    select(symbol) %>% 
-    first() %>% 
-    pull() 
-
   stockRSITbbl <- 
     stockTbbl %>% 
     get.RSI() 
@@ -128,35 +74,14 @@ chart.Stock.Rsi <- function( stockTbbl ){
   return( chart.RSI( stockRSITbbl ) ) 
 }
 
-chart.RSI <- function( rsiTbbl, plotTitle=NA,
+chart.RSI <- function( rsiTbbl, plotTitle="RSI Version 1.0",
                       overValueThreshold=70, overSoldThreshold=30){
-  textDate <- 
-    rsiTbbl %>% 
-    first(n=3) %>% 
-    select(date) %>% 
-    last() %>% 
-    pull() 
-  
-  if( is.na( plotTitle ) ){
-    symbol <- 
-      rsiTbbl %>% first() %>% select(symbol) %>% pull() 
-    plotTitle <- 
-      rsiTbbl %>% 
-      filter( row_number() == 1 | row_number() == n() ) %>% 
-      select( date ) %>% 
-      pull() %>% 
-      paste( collapse=' - ' ) 
-    plotTitle <- 
-      paste( symbol, plotTitle, sep=": ") 
-  }
   g1 <- ggplot( rsiTbbl, aes(x=date)) + 
         geom_line( aes(y=rsi, colour="rsi"), size=1 ) + 
         geom_hline(aes( yintercept = overSoldThreshold, colour="Oversold" ), linetype="dashed") +
-        geom_text( x=textDate, aes(y=overSoldThreshold+2, label="Oversold" ) )+
         geom_hline(yintercept = 70 , linetype="dashed" )+
-        geom_text( x=textDate, aes(y=overValueThreshold+2, label="Overvalued"), size=4)+
         scale_x_date( date_breaks = '1 month', 
-                    date_labels = "%b",
+                    date_labels = "%b %Y",
                     minor_breaks = '2 weeks' ) +
         labs(title=plotTitle,
              caption="9 days, EMA",

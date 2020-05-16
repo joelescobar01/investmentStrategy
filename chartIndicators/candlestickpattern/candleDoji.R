@@ -28,7 +28,6 @@ DragonflyDoji <- function(stockTbbl, delta=0.1) {
   return(candle)
 }
 
-
 #' Determine Gravestoen Doji Pattern using a OHLC price series
 #' @param x OHLC prices.
 #' @param delta Sensivity

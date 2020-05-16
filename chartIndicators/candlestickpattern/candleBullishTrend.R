@@ -42,5 +42,4 @@ BullishHarami <- function( stockTbbl ) {
                               candle.body.top <= lag( candle.body.top ) &
                               candle.body.bottom >= lag( candle.body.bottom ) )
     return( candle ) 
-
 }

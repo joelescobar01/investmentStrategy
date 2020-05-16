@@ -5,8 +5,6 @@
 #' @param delta sensitivity for long candle
 #' @return TRUE if kicking up pattern detected
 #' @export
-
-
 falling.three <- function(x,n=20,delta=1) {
   U <- bullish.candle(x)
   D <- bearish.candle(x)
@@ -39,6 +37,47 @@ falling.three <- function(x,n=20,delta=1) {
   return(result)
 }
 
+BullishThreeLineStrike <- function(stockTbbl,n=10,delta=1) {
+  
+  #DownTrend and Day 3 Lag 
+  candle <- 
+    stockTbbl %>% 
+    DownTrend () %>%
+    BearishCandle() %>% 
+    CandleBodyWideRange() %>% 
+    BullishCandle() 
+
+  candle <-
+    candle %>% 
+    mutate( bullish.candle.3.day.lag = lag( bullish.candle,3 ) )
+  
+  #down trend and Day 2 lag
+  candle <- 
+    candle %>% 
+    mutate( bullish.candle.2.day.lag = lag( bullish.candle, 2 ) ) %>%
+    mutate( down.trend.2.day.lag = lag( down.trend, 2 ) ) %>%
+    mutate( lower.low.2.day.lag = lag(open, 2) < lag( open, 3) ) 
+
+  #down trend and day 1 lag 
+  candle <-
+    candle %>% 
+    mutate( bullish.candle.1.day.lag = lag( bullish.candle, 1 ) ) %>% 
+    mutate( down.trend.1.day.lag = lag( down.trend, 1 ) ) %>% 
+    mutate( lower.low.1.day.lag = lag( open, 1 ) < lag( open,2 ) ) 
+
+  candle <-
+    candle %>% 
+    mutate( three.line.strike = down.trend &
+                                bullish.candle.3.day.lag &
+                                bullish.candle.2.day.lag &
+                                lower.low.2.day.lag &
+                                bullish.candle.1.day.lag & 
+                                lower.low.1.day.lag &
+                                wide.range & 
+                                bearish.candle )
+
+    return(candle )                 
+}
 #' Determine rising three pattern using a OHLC price series
 #' @param x OHLC prices.
 #' @param n number of period of trend
@@ -108,7 +147,42 @@ three.black.crows <- function(x,n=20,delta=1) {
   return(result)
 }
 
+ThreeBlackCrows <- function(stockTbbl,n=20,delta=1) {
+  candle <- 
+    stockTbbl %>% 
+    BearishCandle %>% 
+    mutate( bearish.candle.2.day.lag = lag( bearish.candle, 2 )) %>% 
+    mutate( bearish.candle.1.day.lag = lag( bearish.candle, 1 ))  
 
+  candle <- 
+    candle %>% 
+    LongCandle %>% 
+    mutate( long.candle.2.day.lag = lag( long.candle, 2 ) ) %>% 
+    mutate( long.candle.1.day.lag = lag( long.candle ) ) 
+
+  candle <- 
+    candle %>% 
+    mutate( close.2.day.lag = lag( close, 2 ) ) %>% 
+    mutate( close.1.day.lag = lag( close ) ) 
+
+  candle <- 
+    candle %>% 
+    mutate( open.2.day.lag = lag( open, 2 ) ) %>% 
+    mutate( open.1.day.lag = lag( open ) ) 
+
+
+  
+  candle <-
+    candle %>% 
+    mutate( three.black.crows = bearish.candle & bearish.candle.2.day.lag & 
+           bearish.candle.1.day.lag &
+           long.candle & long.candle.2.day.lag & long.candle.1.day.lag & 
+            close.2.day.lag > close.1.day.lag & close.1.day.lag > close & 
+            open.2.day.lag > open.1.day.lag & open.1.day.lag > open ) %>%
+    select( symbol, date, open, high, low, close, volume, adjusted, three.black.crows) 
+
+  return(candle) 
+}
 #' Determine three white soldiers pattern using a OHLC price series
 #' @param x OHLC prices.
 #' @param n number of period of trend
@@ -138,4 +212,31 @@ three.white.soldiers <- function(x,n=20,delta=1) {
                     x)
   colnames(result) <- "three white soliders"
   return(result)
+}
+
+
+
+AbandonedBaby <- function( stockTbbl ) {
+  candle <-
+    stockTbbl %>% 
+    DownTrend() %>% 
+    BearishCandle %>%
+    mutate( bearish.candle = lag(bearish.candle, 2 ) ) %>% 
+    GapDown %>% 
+    mutate( gap.down = lag( gap.down, 1 ) ) %>% 
+    Doji %>% 
+    mutate( doji = lag( doji,1 ) ) %>% 
+    GapUp %>% 
+    BullishCandle 
+
+  candle <- 
+    candle %>% 
+    mutate( abandoned.baby = down.trend &
+                             bearish.candle &
+                             gap.down & 
+                             doji & 
+                             gap.up & 
+                             bullish.candle ) 
+
+    return( candle ) 
 }

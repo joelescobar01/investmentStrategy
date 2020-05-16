@@ -30,6 +30,42 @@ evening.star <- function(x,n=20,L.delta=1,S.delta=1) {
   colnames(result) <- "evening star"
   return(result)
 }
+EveningStar <- function(stockTbbl,n=20,L.delta=1,S.delta=1) {
+  #Day 1 Lag(2)
+  candle <- 
+    stockTbbl %>%
+    BullishCandle %>% 
+    mutate( bullish.candle = lag( bullish.candle, 2 ) ) 
+
+  candle <-
+    candle %>% 
+    LongCandle() %>% 
+    mutate( long.candle = lag( long.candle, 2 ) )
+
+  #Day 2 Lag(1) 
+  candle <- 
+    candle %>% 
+    GapUp() %>% 
+    mutate( gap.up = lag( gap.up ) ) 
+
+  candle <-
+    candle %>% 
+    BearishCandle %>% 
+    mutate( bearish.candle = lag( bearish.candle ) ) 
+  
+  #Day 3 Present 
+  candle <- 
+    candle %>% 
+    GapDown() %>% 
+    BearishCandle() 
+  
+  candle <-
+    candle %>% 
+    mutate( evening.star = bullish.candle & long.candle & gap.up & bearish.candle & gap.down ) 
+  
+  return( candle ) 
+}
+
 
 #' Determine morning star pattern using a OHLC price series
 #' @param x OHLC prices.
