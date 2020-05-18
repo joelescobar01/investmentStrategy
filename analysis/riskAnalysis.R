@@ -1,14 +1,13 @@
 require(quantmod)
 require(PerformanceAnalytics)
-require(forecast)
-require(purrr)
 require(tibble)
 require(lubridate)
 require(tidyquant)
 require(dplyr)
-require(rvest)
 require(tidyverse)
 source("analysis/chart.analysis.R")
+
+
 # width="600px" border="0" cellspacing="0" cellpadding="0" bgcolor="#336699"
 purchaseQty <- c( 10, 15, 20, 25, 30, 35 )
 probs <- c(.005, 0.0165, .025, .05, .25, .5, .75, .975, .995)
@@ -24,23 +23,35 @@ getStockTbbl <- function( stockSymbolChar, ... ){
 stockDailyLogReturnsTbbl <- function ( stockTbbl ){
   dailyLogReturnsTbbl <- 
     stockTbbl %>% 
-    tq_transmute(adjusted, 
+    tq_mutate(adjusted, 
                  mutate_fun = periodReturn, 
                  period = 'daily', 
-                 type='log' )
+                 type='log' ) 
   return(dailyLogReturnsTbbl)
 }
 
-stockDistributionMetricTbbl <- function( stockDailyLogReturnTbbl ){
+stockDistributionMetric <- function( stockDailyLogReturnTbbl ){
   #probs <- c(.005, .025, .05, .25, .5, .75, .975, .995)
   dist_log_returns <- 
     stockDailyLogReturnTbbl %>% 
     select( daily.returns ) %>% 
-    pull() %>%
+    pull() %>% exp() %>% 
     quantile(probs = probs, na.rm = TRUE)
   return( dist_log_returns )
 }
-stockAvgDailyReturnRateTbbl <- function( stockDailyLogReturnTbbl ){
+stockDistributionMetricTbbl <- function( stockDailyLogReturnTbbl ){
+  #probs <- c(.005, .025, .05, .25, .5, .75, .975, .995)
+  dist_returns <- 
+    stockDailyLogReturnTbbl %>% 
+    select( daily.returns ) %>% 
+    pull() %>% exp() %>% 
+    quantile(probs = probs, na.rm = TRUE) %>% 
+    as_tibble_row() %>% 
+    mutate( qty=c(1) ) 
+  return( dist_returns )
+}
+
+stockAvgDailyReturnRate <- function( stockDailyLogReturnTbbl ){
   avgDailyReturn <- stockDailyLogReturnTbbl %>% 
     pull(daily.returns) %>% 
     mean(na.rm=TRUE) %>% exp() 
@@ -96,62 +107,101 @@ compoundReturnsTbbl <- function( stockTbbl, nDaysBackStart=90, nDaysBackEnd=0 ) 
 
 }
 
-stopLossAanalysis <- function( stockTbbl, portfolioAmnt){
-  closePrice <- 
+PastCumulativeReturns <- function( stockTbbl, nDays=13, principalAmt=1){
+  returnRate <- 
     stockTbbl %>% 
-    select( close ) %>% 
-    tail(n=1) %>% 
-    pull() 
-  print("Closing Price" )
-  print( closePrice )
+    stockDailyLogReturnsTbbl %>%
+    last(n=nDays ) %>% 
+    select( date, daily.returns ) 
   
-  #get Daily Returns 
-  daily.Returns.Tbbl <- 
-    stockTbbl %>% 
-    stockDailyLogReturnsTbbl() %>% 
-    tail(n=30) 
+  rate <- 
+    returnRate %>% 
+    select( daily.returns ) %>% 
+    pull 
+
+  returnTbbl <- 
+    returnRate %>% 
+    add_column( cummalative.return = cumprod( principalAmt + rate ) ) 
+
+  return( returnTbbl ) 
+}
+
+ChartPastCummulativeReturns <- function( returnTbbl ){
   
-  dailyCompoundReturn <- 
-    daily.Returns.Tbbl %>%
-    stockAvgDailyReturnRateTbbl() #average volatitilty
-  
-  print("Stock daily Average compound return: ")
-  print( dailyCompoundReturn-1 )
-  
-  
+  #roE <- returnTbbl %>% first %>% select( cummalative.return ) %>% pull() 
+  roE <- paste( "Cummulative Return ($USD)" ) 
+  g1 <- 
+    returnTbbl %>% 
+    ggplot() + 
+    geom_line( aes( x=date, y=cummalative.return) ) + 
+    labs( x='Date', y=roE )+ 
+    scale_x_date( breaks='5 days',
+                  minor_breaks='1 days',
+                  date_labels='%b-%d') +
+    scale_y_continuous(position = "right") +
+    theme() 
+
+  return(g1) 
+}
+
+TimePeriodVolatility <- function( symbol ){
+  stock <- 
+    tq_get( symbol, 
+           get="stock.prices", 
+           from ="2017-01-01" ) %>% 
+    tq_mutate( select=adjusted,
+                mutate_fun = periodReturn, 
+                period="daily", 
+                type="log" ) %>% 
+    group_by( year=year(date) ) %>% 
+    summarize( annual.volatility = sd(daily.returns)/sqrt(1/n()) ) %>% 
+    mutate( monthly.volatility = annual.volatility*sqrt(1/12) ) %>%
+    mutate( weekly.volatility = annual.volatility*sqrt(1/52) ) 
+  return( stock ) 
+}
+
+ChartTimePeriodVolatility <- function( periodVolTbl ){
+ p1 <- 
+  periodVolTbl %>% 
+  gather("Time.Period", "Volatility", -year ) %>% 
+     ggplot( aes(x=year, y=Volatility, fill=Time.Period ) ) +
+     geom_bar( position="dodge", stat="identity") + 
+     scale_fill_discrete( labels=c("Annual", "Monthly", "Weekly") ) +
+     theme() 
+  return(p1) 
+}
+
+
+MaxQtyBuy <- function( closePrice, maxAmt ){
+  qtyCount <- 0
+  while( maxAmt > closePrice ){
+    maxAmt <- maxAmt - closePrice 
+    qtyCount <- qtyCount + 1 
+  }
+  return(qtyCount) 
+}
+
+stopLossAnalysis <- function( stockTbbl ){
   # get Return Metric
   stockReturnMetric <- 
     stockTbbl %>% 
     stockDailyLogReturnsTbbl %>%     
-    stockDistributionMetricTbbl()
+    stockDistributionMetricTbbl 
   
-  print("Stock Daily Return Metrics:")
-  print( stockReturnMetric)
-  
-  #getVolatility from previous 9 days 
-  shortTermVolatility <- 
-    stockTbbl %>% 
-    stockSumVolatility(  n=9 ) %>%
-    drop_na() %>%
-    tail(n=30) #graph 
-  
-  maxPortfolioLoss <-
-    portfolioAmnt * MAXSALELOSS
-  
-  totalPerQty <- 
-    closePrice * purchaseQty
-  dailyReturnMtx <- 
-    matrix( 0, nrow=length(totalPerQty), ncol = length(stockReturnMetric) ) 
-  colnames(dailyReturnMtx) <- 
-    names( stockReturnMetric )
-  rownames(dailyReturnMtx) <- purchaseQty
-  
-  for(ii in seq_along(totalPerQty)){
-    dailyReturnMtx[ii,] <-  unname( totalPerQty[ii]*(stockReturnMetric) )
-  }
-  print("Rate of Return per Day per Qty Purchased: ")
-  print( dailyReturnMtx )
-  
+  roE <- stockReturnMetric 
+
+  return( roE )  
 }
+
+DailyAnnualReturnRate <- function( stockTbbl){
+  #get Daily Returns 
+  dailyReturns <- 
+    stockTbbl %>% 
+    stockDailyLogReturnsTbbl() %>% 
+    stockAvgDailyReturnRate 
+  
+  return( dailyReturns ) 
+}
+
 
 ## get the last row of tibble %>% slice(n()) 

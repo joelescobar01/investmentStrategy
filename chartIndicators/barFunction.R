@@ -21,53 +21,62 @@ findDiscreteMin <- function( stockTbbl ){
   return(localMin)
 }
 
-chart.BAR <- function( stockTbbl, plotTitle=NA ){ 
+chart.BAR <- function( stockTbbl, plotTitle="BAR Graph Version 1.1", zoomDays=21 ){ 
  
-  trendLines <- 
-    stockTbbl %>% 
-    select(close) %>% 
-    pull() %>% 
-    discreteFirstOrder() %>% 
-    diff()
-  trendLines <- 
-    c(NA, trendLines)
-  
-  if( is.na( plotTitle ) ){
-    symbol <- 
-      stockTbbl %>% first() %>% select(symbol) %>% pull() 
-    plotTitle <- 
-      stockTbbl %>% 
-      filter( row_number() == 1 | row_number() == n() ) %>% 
-      select( date ) %>% 
-      pull() %>% 
-      paste( collapse=' - ' ) 
-    plotTitle <- 
-      paste( symbol, plotTitle, sep=": ") 
-  }
-
-  trend <- 
-    stockTbbl %>% 
-    mutate(min.max = trendLines) %>% 
-    filter( min.max == 2 ) %>% 
-    select( date,close )
-
   g1 <- 
     stockTbbl %>% 
       ggplot( aes(y=close, x=date) ) + 
       geom_barchart(aes(open = open, high = high, low = low, close = close)) + 
-      geom_ma(color = "darkgreen")  +
-      geom_point(data=trend, aes( x=date, y=close ), alpha = 0.4, size=2 ) +
+      geom_ma(color = "darkgreen") +
       scale_x_date( date_breaks = '1 month', 
-                    date_labels = "%b",
+                    date_labels = "%b-%d",
                     minor_breaks = '2 weeks' ) +
       labs( title=plotTitle, 
             y="Closing Price", 
             x="Date") +
+      coord_cartesian(xlim=c( 
+                            nth(stockTbbl$date,n=1)+days(zoomDays), 
+                            nth(stockTbbl$date,n=-1)) )+ 
       theme_gray() 
     return(g1) 
 }
 
+chart.BAR.Daily <- function( stockTbbl, plotTitle="BAR Graph Version 1.0", zoomDays=21 ){ 
+ 
+  g1 <- 
+    stockTbbl %>% 
+      ggplot( aes(y=close, x=date) ) + 
+      geom_barchart(aes(open = open, high = high, low = low, close = close)) + 
+      scale_x_date( date_breaks = '1 weeks', 
+                    date_labels = "%b-%d",
+                    minor_breaks = '1 days' ) +
+      labs( title=plotTitle, 
+            y="USD $", 
+            x="Date") +
+        coord_cartesian(xlim=c( 
+                            nth(stockTbbl$date,n=1)+days(zoomDays), 
+                            nth(stockTbbl$date,n=-1)) )+ 
+      theme_gray() 
+    return(g1) 
+}
 
+chart.Price.Daily <- function( stockTbbl ){ 
+  g1 <- 
+    stockTbbl %>% 
+      ggplot( aes(x=date) ) + 
+      geom_line( aes(y=( high-low) ), size=1)+
+      scale_x_date( date_breaks = '1 weeks', 
+                    date_labels = "%b-%d",
+                    minor_breaks = '1 days' ) +
+      labs( y="Volatility USD($)", 
+            x="Date") +
+      scale_colour_manual( 
+          guide="none",
+          values=c("blue", "red")
+          )+
+    theme_gray() 
+    return(g1) 
+}
 
 
 chart.BAR2 <- function( stockTbbl, plotTitle=NA ){ 

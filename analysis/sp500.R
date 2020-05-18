@@ -19,6 +19,14 @@ sp500ListWebScrape <- function( ){
   return(sp_500)
 }
 
-
-
-
+for(ii in LETTERS[seq(2:26)]){
+  letter <- ii
+  url <- paste( "http://eoddata.com/stocklist/NYSE/", letter, ".htm", sep="")
+  ticker <- read_html( url ) %>%
+    html_node(".quotes") %>%
+    html_table() 
+  
+  symbol <- ticker['Code'] %>% pull() 
+  symbol <- gsub( "\\.", "-", symbol )
+  stockMarket <- c(stockMarket, symbol ) 
+}

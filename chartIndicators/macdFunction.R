@@ -7,13 +7,6 @@ library(ggplot2)
 # finds stocks that signal a nearby buy 
 #signal.MACD.BUY <- function( stockTbbl, nDays=7 ){
     
-getMACD <- function( stockDF ){
-  macd <- 
-    MACD(Cl(stockDF), nFast=12, nSlow=26,
-        nSig=9, maType=EMA)
-  return( macd)
-}
-
 macd.Interface <- function( stockTbbl){
   stock.MACD.Tb <- 
     stockTbbl %>% 
@@ -26,23 +19,30 @@ macd.Interface <- function( stockTbbl){
   return( stock.MACD.Tb )
 }
 
-get.MACD <- function(stockTbbl, fast=3, slow=10, signal=16 ){
-    
+GetMACD <- function(stockTbbl, fast=3, slow=10, signal=16 ){
+  if( stockTbbl %>% tally < signal*2 )
+    return(NA)
+
   stockMACDTbbl <- 
     stockTbbl %>% 
     group_by(symbol) %>% 
     tq_mutate(select     = adjusted, 
                 mutate_fun = MACD, 
-                nFast      = 3, 
-                nSlow      = 10, 
-                nSig       = 16, 
+                nFast      = fast, 
+                nSlow      = slow,
+                nSig       = signal, 
                 maType     = EMA) %>%
-     mutate(divergence = macd - signal) %>%
-     select(-(open:volume)) %>% 
-    drop_na() 
+     mutate(divergence = macd - signal)
   return(stockMACDTbbl) 
 }
 
+RateOfChangeDivergence <- function( macdTbbl ){
+  macdTbbl <- 
+    macdTbbl %>% 
+    mutate( signal.diverging = abs(divergence) > abs(lag(divergence)) &
+                               abs(lag( divergence )) > abs(lag( divergence,2)) ) 
+  return( macdTbbl ) 
+}
 #returns Vector 
 macdLinesCrossover <- function( macdTbbl ){
   cross <- 
@@ -66,89 +66,43 @@ macdSlope <- function( macdTbbl, slope=1){
   return(macdTbbl) 
 }
 
-macdSignalDistance <- function( macdTbbl ){
-  positiveDiffMACD <- 
-    stockMACDTbbl %>%
-    filter( row_number() >= (n()-29)) %>% 
-    filter( divergence >= 0 )
-  return(positiveDiffMACD) 
-}
-
-signal.Buy.MACD <- function( stockTbbl, nDays=9 ){
-  
+signal.Buy.MACD <- function( stockTbbl, nDays=5, symbol="MACD" ){
   stockMACDTbbl <- 
     stockTbbl %>%
-    get.MACD() 
+    GetMACD()  
+  
+  if( is.na( stockMACDTbbl ) )
+    return(NA)
 
-  MACDTbbl <- 
+  testTbbl <- 
     stockMACDTbbl %>% 
-    tail(n=nDays) 
+    RateOfChangeDivergence() %>% 
+    filter( date >= ymd(Sys.Date() - days(nDays) ) ) %>%
+    filter( any( signal.diverging ) )
 
-    
-  #signal 1.5: If divergence is pretty large and positive ignore uptrending 
-  divergenceVector <- 
-    MACDTbbl %>% 
-    select(divergence) %>% 
-    pull() 
-  
-  divergenceMean <- 
-    divergenceVector %>% 
-    mean() 
-  divergenceSD <- 
-    divergenceVector %>% 
-    sd() 
-
-  #signal 1: positive DIFF 
-  positiveDiffMACD <- 
-    MACDTbbl %>%
-    filter( divergence  <= divergenceMean+divergenceSD )
-
-  #signal2: positive MACD slope 
-  positiveSlopeMACD <-
-    positiveDiffMACD %>% 
-    mutate( slope.macd = macd - lag(macd) ) %>% 
-    filter( slope.macd > 0) %>% 
-    pull()
-
-  #signal3: macd crossed over signal
-  #crossMACDLine <- 
-  #  positiveSlopeMACD %>% 
-  #  macdLinesCrossover() 
-  
-  if( length(positiveSlopeMACD) == 0 )
+  if( testTbbl %>% nrow() == 0 ) 
     return(NA)
   else{
     g1 <- 
-      chart.MACD( stockMACDTbbl )
+      chart.MACD( stockMACDTbbl, plotTitle=symbol )
     return(g1)
   } 
 }
 
-chart.MACD <- function( macdTbbl, plotTitle="MACD Version 1.2" ){
-  startDate <- 
-    macdTbbl %>% 
-    select(date) %>% 
-    first(n=3) %>%
-    last() %>% 
-    pull() 
-  
-  startSignal <-
-    macdTbbl %>% 
-    select(signal) %>% 
-    first() %>% 
-    pull() 
-  
-  startMACD <-
-    macdTbbl %>% 
-    select(macd) %>% 
-    first() %>% 
-    pull() 
-  
-    g1 <- ggplot( macdTbbl, aes(x=date)) + 
+chart.MACD <- function( macdTbbl,plotTitle="MACD Version 1.2",zoomDays=21 ){
+  g1 <- ggplot( macdTbbl, aes(x=date)) + 
         geom_line( aes(y=macd, colour="MACD"), size=1 ) +
-        geom_text(x=startDate, y=startMACD+1, aes(colour="MACD"), label="MACD", size=4)+
+        geom_text(x=nth(macdTbbl$date,n=-1), 
+                  y=nth(macdTbbl$macd,n=-1), 
+                  aes(colour="MACD"),
+                  vjust=0, nudge_y=0.5,
+                  label="MACD", size=5)+
         geom_line( aes(y=signal, colour="Signal"), size=1) +
-        geom_text(x=startDate, y=startSignal-0.5, aes(colour="Signal"), label="Signal", size=4)+
+        geom_text(x=nth(macdTbbl$date,n=-15), 
+                  y=nth(macdTbbl$signal,n=-15), 
+                  aes(colour="Signal"), 
+                  vjust=0, nudge_y=0.5,
+                  label="Signal", size=5)+
         geom_col( aes(y=divergence, fill=sign(divergence) ) ) + 
         scale_colour_manual( 
           guide="none",
@@ -158,6 +112,9 @@ chart.MACD <- function( macdTbbl, plotTitle="MACD Version 1.2" ){
               y="", 
               x="Date") + 
         scale_fill_gradient(guide=NULL, name=NULL, low = alpha("red",.5), high = alpha("green",.5))+
+        coord_cartesian(xlim=c( 
+                            nth(macdTbbl$date,n=1)+days(zoomDays), 
+                            nth(macdTbbl$date,n=-1)) )+ 
         theme()
 
     # Note that, the argument legend.position can be also a numeric vector c(x,y). 

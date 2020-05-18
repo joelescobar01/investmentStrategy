@@ -67,14 +67,6 @@ test_that("Hammer", {
 
 
 
-# hammer 
-# 2011-10-18  false
-# 2011-10-19  false
-# 2011-10-20  false
-# 2011-10-21   true
-# 2011-10-24  false
-# 2011-10-25  false
-
 #x <- inverted.hammer(msft)
 #x['2011-11-20/2011-11-30']
 test_that("Inverted Hammer", {
@@ -92,15 +84,6 @@ test_that("Inverted Hammer", {
   expect_false(ymd('2011-11-29') %in% x)
   expect_false(ymd('2011-11-30') %in% x)
 })
-
-# inverted hammer
-# 2011-11-21           false
-# 2011-11-22           false
-# 2011-11-23           false
-# 2011-11-25            true
-# 2011-11-28           false
-# 2011-11-29           false
-# 2011-11-30           false
 
 #x <- bullish.engulf(msft)
 #x['2011-11-02/2011-11-08']

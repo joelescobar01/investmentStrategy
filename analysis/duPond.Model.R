@@ -122,7 +122,6 @@ duPont.ModelTree <- function ( symbol ) {
     duPont %>% 
     select( Year, 
            symbol, 
-           
            Debt.To.Asset, 
            Asset.To.Equity, 
            Debt.To.Equity,

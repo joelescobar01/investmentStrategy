@@ -96,10 +96,76 @@ marketWatchTableClass <- function ( htmlSession ) {
 incomeTableExcludedRows <- c(-2, -8, -10, -11 )
 liabilitiesTableIncludeRows <- c(1,2,4, 7, 11, 24, 30, 39, 42, 43)
 
-marketWatchGrossIncomeTable2 <- function( htmlSession,n=1 ){
+marketWatchTableClean <- function( tableStatement, n=1 ){
+  yearTable <-
+    tableStatement[[n]] %>% 
+    select( -ncol(.) )
+  
+  names( yearTable ) <- sub( "[:alpha:].{1,}", "Year", names( yearTable )) 
+ 
+  yearTable[1][[1]] <-
+    yearTable[1][[1]] %>% 
+    str_replace_all("\\r\\n\\s{1,}", "") %>% 
+    str_trim("left") %>%
+    str_replace_all("\\W{1,}", "." ) 
+
+  return( yearTable ) 
+}
+
+marketWatchTable <- function( htmlSession, n=NA ){
+  if( is.na( n ) )
+    return(NA) 
   incomeStatement <-
     marketWatchTableClass( htmlSession )   
   
+  yearTable <- 
+    marketWatchTableClean( incomeStatement, n ) 
+  
+  marketWatchMatrix <- 
+    yearTable %>% 
+    t() 
+  return(marketWatchMatrix )  
+}
+
+
+marketWatchGrossIncomeTable1 <- function( htmlSession,n=1 ){
+  incomeStatement <-
+    marketWatchTableClass( htmlSession )   
+  
+  yearTable <- 
+    marketWatchTableClean( incomeStatement, n ) 
+  
+  incomeMatrix <- 
+    yearTable %>% 
+    t() 
+    
+  incomeTbl <- 
+    tibble( "Year"= names(incomeMatrix[,1]) ) %>%
+    slice( -1 ) 
+  for( ii in 1:ncol(incomeMatrix) ){
+    if( any( str_detect( incomeMatrix[,ii], "-" ) ) )
+      next() 
+    
+    incomeCol <-
+      incomeMatrix[-1,ii] %>% 
+      replaceBillion() %>% 
+      replaceMillion() %>%
+      as.numeric() %>% 
+      as_tibble_col( column_name=unname(incomeMatrix[1,ii]) )
+    incomeTbl <- 
+      bind_cols( incomeTbl, incomeCol ) 
+  }
+  
+  #incomeTbl <- 
+  #  incomeTbl %>% 
+  #  select( Year, Gross.Revenue, COGS.DA, Gross.Income )
+
+  return(incomeTbl) 
+}
+
+marketWatchGrossIncomeTable2 <- function( htmlSession,n=1 ){
+  incomeStatement <-
+    marketWatchTableClass( htmlSession )   
   yearTable <- 
     incomeStatement[[n]] %>%
     select(matches("[0-9]{3,5}"))
@@ -174,6 +240,36 @@ marketWatchNetIncomeTable2 <- function( htmlSession,n=2 ){
 
   return( netIncome ) 
 }
+marketWatchNetIncomeTable2_1 <- function( htmlSession,n=2 ){
+  incomeStatement <-
+    marketWatchTableClass( htmlSession )   
+  
+  yearTable <- 
+    marketWatchTableClean( incomeStatement, n ) 
+  
+  incomeMatrix <- 
+    yearTable %>% 
+    t() 
+    
+  incomeTbl <- 
+    tibble( "Year"= names(incomeMatrix[,1]) ) %>%
+    slice( -1 ) 
+  for( ii in 1:ncol(incomeMatrix) ){
+    if( any( str_detect( incomeMatrix[,ii], "-" ) ) )
+      next() 
+    
+    incomeCol <-
+      incomeMatrix[-1,ii] %>% 
+      replaceBillion() %>% 
+      replaceMillion() %>%
+      as.numeric() %>% 
+      as_tibble_col( column_name=unname(incomeMatrix[1,ii]) )
+    incomeTbl <- 
+      bind_cols( incomeTbl, incomeCol ) 
+  }
+  return( incomeTbl ) 
+}
+
 
 addNetIncomeTableRowNames <- function( incomeTbl, incomeMatrix, 
                                     colN=0 ){
@@ -226,14 +322,14 @@ marketWatchNetIncomeTable2 <- function( htmlSession,n=2 ){
 marketWatchCurrentAssetTable <- function( htmlSession,n=1 ){
   balanceSheet <-
     marketWatchTableClass( htmlSession )   
-    
   yearTable <- 
     balanceSheet[[n]] %>%
     select(matches("[0-9]{3,5}"))  
  
   assetMatrix <-
     yearTable %>% 
-    slice( c(1, 6, 13, 20) ) %>% 
+    slice( c(1,16 ) ) %>%  
+    #slice( c(1, 6, 13, 20) ) %>% 
     t() 
   
   currentAsset <- 
@@ -245,7 +341,6 @@ marketWatchCurrentAssetTable <- function( htmlSession,n=1 ){
       replaceBillion() %>% 
       replaceMillion()
   }
-  
   currentAsset <- 
     currentAsset %>% 
     addCurrentAssetRowNames( assetMatrix, colN=nrow(assetMatrix) )
@@ -262,12 +357,12 @@ addCurrentAssetRowNames <- function( currentAssetTbl, assetMatrix,
   temp <- 
     currentAssetTbl %>% 
     mutate( Cash.ST.Investments=as.numeric(assetMatrix[,1]) ) %>%
-    mutate( Total.Accounts.Receivable=as.numeric(assetMatrix[,2] )) %>%
-    mutate( Inventories=as.numeric(assetMatrix[,3] )) %>%
+    #mutate( Total.Accounts.Receivable=as.numeric(assetMatrix[,2] )) %>%
+    #mutate( Inventories=as.numeric(assetMatrix[,3] )) %>%
     #mutate( Depreciation.Amortization=as.numeric(incomeMatrix[,4] )) %>%
     #mutate( Depreciation=as.numeric(incomeMatrix[,5] )) %>%
     #mutate( Amortization=as.numeric(incomeMatrix[,6] ) ) %>% 
-    mutate( Total.Current.Assets=as.numeric(assetMatrix[,4] ))
+    mutate( Total.Current.Assets=as.numeric(assetMatrix[,2] ))
   return(temp) 
 }
 
@@ -323,9 +418,14 @@ marketWatchLiabilitiesTable2 <-function( htmlSession,n=3 ){
   balanceSheet <-
     marketWatchTableClass( htmlSession )   
   
-  yearTable <- 
+  browser()
+  colOne <- 
     balanceSheet[[n]] %>%
-    select(matches("[0-9]{3,5}"))  
+    select( -ncol(.) ) %>% 
+    names() %>% 
+    first() 
+    
+    #select(matches("[0-9]{3,5}"))  
   
   liabilitiesMatrix <- 
     yearTable %>% 

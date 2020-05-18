@@ -26,7 +26,7 @@ chart.CandleStick <- function( stockTbbl, plotTitle="Candlestick Version 0.1" ) 
     labs(title = "Candlestick Chart", 
          y = "Closing Price", 
          x = "") + 
-    scale_x_date( date_labels="%m/%Y",
+    scale_x_date( date_labels="%m %Y",
                   breaks = '1 months',
                   minor_breaks = '2 weeks') +
     theme() 
@@ -36,8 +36,13 @@ chart.CandleStick <- function( stockTbbl, plotTitle="Candlestick Version 0.1" ) 
 Candlestick.Chart.Add.Pattern <- function( candlestickChart, patternTbbl, color="black", label="" ) {
   g1 <-
     candlestickChart + 
-    geom_rect(data=patternTbbl, aes( ymin=low, ymax=high, xmin=date-days(1), xmax=date+days(1)),alpha=0.3, color=color, fill=color ) + 
-    geom_label( data=patternTbbl, position=position_nudge(x=0,y=-1), alpha=0.2, aes( x=date, y=low), label=label ) 
+    geom_rect(data=patternTbbl, 
+              aes(  ymin=low, ymax=high, 
+                    xmin=date-days(1), xmax=date+days(1)),
+              alpha=0.3, color=color, fill=color ) + 
+    geom_label( data=patternTbbl, position=position_nudge(x=0,y=-1), 
+                alpha=0.2, aes( x=date, y=low), 
+                label=label ) 
   return( g1 ) 
 }
 

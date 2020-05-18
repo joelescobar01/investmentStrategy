@@ -76,6 +76,11 @@ BullishThreeLineStrike <- function(stockTbbl,n=10,delta=1) {
                                 wide.range & 
                                 bearish.candle )
 
+    select( symbol, date, open, 
+            high, low, close, 
+            volume, adjusted, three.line.strike ) 
+
+    
     return(candle )                 
 }
 #' Determine rising three pattern using a OHLC price series
@@ -174,11 +179,17 @@ ThreeBlackCrows <- function(stockTbbl,n=20,delta=1) {
   
   candle <-
     candle %>% 
-    mutate( three.black.crows = bearish.candle & bearish.candle.2.day.lag & 
-           bearish.candle.1.day.lag &
-           long.candle & long.candle.2.day.lag & long.candle.1.day.lag & 
-            close.2.day.lag > close.1.day.lag & close.1.day.lag > close & 
-            open.2.day.lag > open.1.day.lag & open.1.day.lag > open ) %>%
+    mutate( three.black.crows = 
+            bearish.candle & 
+            bearish.candle.2.day.lag & 
+            bearish.candle.1.day.lag &
+            long.candle & 
+            long.candle.2.day.lag & 
+            long.candle.1.day.lag & 
+            close.2.day.lag > close.1.day.lag & 
+            close.1.day.lag > close & 
+            open.2.day.lag > open.1.day.lag & 
+            open.1.day.lag > open ) %>%
     select( symbol, date, open, high, low, close, volume, adjusted, three.black.crows) 
 
   return(candle) 
