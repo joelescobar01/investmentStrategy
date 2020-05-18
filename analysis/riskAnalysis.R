@@ -160,6 +160,27 @@ TimePeriodVolatility <- function( symbol ){
   return( stock ) 
 }
 
+TimePeriodVolatility2 <- function( stockTbbl ){
+  stockVolatility <- tryCatch({ 
+    stockTbbl %>% 
+      tq_mutate( select=adjusted,
+                mutate_fun = periodReturn, 
+                period="daily", 
+                type="log" ) %>% 
+      group_by( year=year(date) ) %>% 
+      summarize( annual.volatility = sd(daily.returns)/sqrt(1/n()) ) %>% 
+      mutate( monthly.volatility = annual.volatility*sqrt(1/12) ) %>%
+      mutate( weekly.volatility = annual.volatility*sqrt(1/52) ) 
+  }, error = function(err){
+    return(NA) },
+    finally = { 
+      print("Could Not Calculate Time Period Volatility" )
+    }) 
+    
+  return( stockVolatility ) 
+}
+
+
 ChartTimePeriodVolatility <- function( periodVolTbl ){
  p1 <- 
   periodVolTbl %>% 

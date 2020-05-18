@@ -84,7 +84,7 @@ signal.Buy.MACD <- function( stockTbbl, nDays=5, symbol="MACD" ){
     return(NA)
   else{
     g1 <- 
-      chart.MACD( stockMACDTbbl, plotTitle=symbol )
+      chart.MACD( stockMACDTbbl, plotTitle=symbol, zoomDays=34 )
     return(g1)
   } 
 }

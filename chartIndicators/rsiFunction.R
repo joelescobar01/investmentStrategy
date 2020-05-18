@@ -73,12 +73,12 @@ signal.Buy.RSI <- function( stockTbbl, symbol="RSI",
   if( buyRSITbbl %>% tally() == 0  )
     return(NA)
   else {
-    return( chart.RSI( stockTbbl, plotTitle=symbol) )
+    return( chart.RSI( stockTbbl, plotTitle=symbol, zoomDays=34) )
   }
 }
 
 chart.RSI <- function( rsiTbbl, plotTitle="RSI Version 1.0",
-                      overValueThreshold=70, overSoldThreshold=30){
+                      overValueThreshold=70, overSoldThreshold=30, zoomDays=21){
   g1 <- ggplot( rsiTbbl, aes(x=date)) + 
         geom_line( aes(y=rsi, colour="rsi"), size=1 ) +
         geom_text(  x=nth(rsiTbbl$date,n=-1), 
@@ -100,6 +100,9 @@ chart.RSI <- function( rsiTbbl, plotTitle="RSI Version 1.0",
           values=c("blue", "red")
           )+
         scale_y_continuous(position = "right") +
+        coord_cartesian(xlim=c( 
+                            nth(rsiTbbl$date,n=1)+days(zoomDays), 
+                            nth(rsiTbbl$date,n=-1)) )+ 
         theme(
           legend.position = c(0.1, 0.2),
           legend.title = element_blank(),

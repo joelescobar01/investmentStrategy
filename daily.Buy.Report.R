@@ -122,11 +122,18 @@ generateBuyReport2 <- function(  symbols=c(), purchaseLimit=150.00 ){
     if( maxLoss > 1500*0.02  )
       next() 
     
+    periodVolatility <- 
+      TimePeriodVolatility2( data1 )
+    
+    print(periodVolatility )
+    if( !is_tibble( periodVolatility ) )
+      next() 
+
     dailyAvgYield <-
       roE %>% 
       map( function(x) x*(0.5*securityQty) ) %>% 
       as_tibble_row() 
-		
+	  	
 		dailyAvgYield <-
 			roE %>% 
 		  map( function(x) x*(securityQty) ) %>% 
@@ -143,9 +150,10 @@ generateBuyReport2 <- function(  symbols=c(), purchaseLimit=150.00 ){
       append( ticker ) 
 
     p1 <- chart.BAR( data1, ticker )    
+    
     fileName <- paste( ticker, "png", sep="." )
-    fileName2 <- paste( ticker,"ROE.png", sep="_") 
-    fileName3 <- paste( ticker,"Analysis.png", sep="_") 
+    fileName2 <- paste( "ROE_", ticker,".png", sep="") 
+    fileName3 <- paste( "Analysis_", ticker,".png", sep="") 
     fileName <- paste( directory, fileName, sep="/") 
     fileName2 <- paste( directory, fileName2, sep="/") 
     fileName3 <- paste( directory, fileName3, sep="/") 
@@ -169,7 +177,7 @@ generateBuyReport2 <- function(  symbols=c(), purchaseLimit=150.00 ){
       data1 %>% 
       tail(n=7) %>% 
       chart.Price.Daily( ) 
-
+    
     gp2 <- 
       ggarrange( p1, ggarrange( p2, g1, ncol=2 ),   
                   nrow=2, ncol=1  ) %>% 
@@ -182,8 +190,8 @@ generateBuyReport2 <- function(  symbols=c(), purchaseLimit=150.00 ){
    ggsave( fileName2, plot=gp2 )  
     
    p3 <- 
-      TimePeriodVolatility( ticker )  %>% 
-      ChartTimePeriodVolatility()       
+    periodVolatility %>%   
+    ChartTimePeriodVolatility()       
    p4 <-
      ggtexttable( dailyAvgYield, 
                   rows=NULL, cols = colnames(dailyAvgYield )) + theme_void() 

@@ -4,8 +4,8 @@
 BullishCandle <- function(stockTbbl) {
 candle <- 
     stockTbbl %>% 
-    mutate( bullish.candle = open < close ) 
-
+    mutate( bullish.candle = open < close )  %>% 
+    filter( bullish.candle == TRUE ) 
   return( candle ) 
 }
 #' Determine bullish engulfing pattern using a OHLC price series
@@ -21,8 +21,9 @@ BullishEngulf <- function( stockTbbl ){
     mutate( bullish.engulfing = bullish.candle & 
                                 lag(bearish.candle ) & 
                                 candle.body.top >= lag( candle.body.top ) & 
-                                candle.body.bottom <= lag( candle.body.bottom )) 
-
+                                candle.body.bottom <= lag( candle.body.bottom )) %>% 
+    filter( bullish.engulfing == TRUE ) %>% 
+    select( date, open, close, high, low, bullish.engulfing ) 
   return( candle ) 
 
 }
@@ -40,6 +41,8 @@ BullishHarami <- function( stockTbbl ) {
     mutate( bullish.harami =  bullish.candle & 
                               lag( bearish.candle ) & 
                               candle.body.top <= lag( candle.body.top ) &
-                              candle.body.bottom >= lag( candle.body.bottom ) )
+                              candle.body.bottom >= lag( candle.body.bottom ) ) %>% 
+    select( date, open, close, high, low, bullish.harami ) %>% 
+    filter( bullish.harami == TRUE ) 
     return( candle ) 
 }

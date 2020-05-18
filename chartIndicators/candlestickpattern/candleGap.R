@@ -8,8 +8,8 @@ GapDown <- function(stockTbbl) {
   
   candle <- 
     candle %>% 
-    mutate( gap.down = gap.down < 0 )
-
+    mutate( gap.down = gap.down < 0 ) %>% 
+    filter( gap.down == TRUE ) 
   return(candle)
 }
 
@@ -23,7 +23,7 @@ GapUp <- function( stockTbbl ){
   
   candle <- 
     candle %>% 
-    mutate( gap.up = gap.up > 0 )
-
+    mutate( gap.up = gap.up > 0 ) %>% 
+    filter( gap.up == TRUE ) 
   return(candle)
 }
