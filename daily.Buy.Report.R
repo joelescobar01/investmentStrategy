@@ -99,10 +99,14 @@ generateBuyReport2 <- function(  symbols=c(), purchaseLimit=150.00 ){
       filter( date >= "2020-03-20" ) %>% #adjust for the coronavirus  
       DailyAnnualReturnRate() 
 
+    excessReturnRate <- 
+      data1 %>%
+      filter( date >= "2020-03-20" ) %>% #adjust for the coronavirus  
+      ExcessReturn()
 
     if( returnRate < 1 )
       next() 
-    
+
     closePrice <- data1 %>% select( close ) %>% last %>% pull() 
     
     securityQty <- 
@@ -145,6 +149,10 @@ generateBuyReport2 <- function(  symbols=c(), purchaseLimit=150.00 ){
 			mutate_all( funs(round(., 4))) %>%
 			select( qty, everything() ) 
     
+    sharpeRatio <-
+      ExcessReturn() %>% 
+      SharpeRatio() 
+
 		validTickers <-  
       validTickers %>% 
       append( ticker ) 

@@ -15,7 +15,7 @@ tbill3MDailyRate <- function(  ){
   #colnames(tbillLogRate) <- c( "Rate")
   #tbillDF <- zooToDataFrame(tbillLogRate)
   #
-  #return(tbillLogRate)
+  return(tbillLogRate)
 }
 
 tbill3MDailyLogtRate <- function( ){
@@ -36,23 +36,26 @@ tbill3MDailyLogtRate <- function( ){
   return(tbillLogRate)
 }
 
-week13Rates <- function( dailyRate ){
-  dailyRate <- 
-    tail( dailyRate, n=92 )
-  colnames(dailyRate) <- c( "Rate")
-  dailyRateDF <- zooToDataFrame( dailyRate)
-  return(dailyRate) 
+dailyRiskFreeRates <- function( ){
+  #ep <- endpoints(prices, "months")
+  tbill13Week <- 
+    tq_get( "^IRX", get="stock.prices" ) %>% drop_na() 
+  
+  rates <-
+    tbill13Week$close 
+  dailyYield <- 
+    (1+(tbill13Week$close/100))^(1/252) - 1 %>%
+    as_tibble_col( column_name="daily.yield" ) 
+   
+  tbill13Week <- 
+    tbill13Week %>% 
+    select( date ) %>%
+    add_column( dailyYield ) 
+  return( tbill13Week ) 
+  #  threeMoPrice <- threeMoPrice["2019-12-16::"]
+#  threeMoPrice <- threeMoPrice[endpoints(threeMoPrice, "days"),]
 }
 
-dailyRiskFreeRates <- function( tbillDailyRates ){
-  #ep <- endpoints(prices, "months")
-  dailyYield <- (1+(tbill/100))^(1/252) - 1
- # threeMoPrice <- cumprod(1+dailyYield)
-  return(dailyYield)
-#  threeMoPrice <- threeMoPrice["2019-12-16::"]
-#  threeMoPrice <- threeMoPrice[endpoints(threeMoPrice, "days"),]
-#  return(threeMoPrice)  
-}
 
 scalePriceAxis <- function( priceVector ){
   priceRange <-

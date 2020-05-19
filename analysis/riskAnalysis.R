@@ -12,6 +12,7 @@ source("analysis/chart.analysis.R")
 purchaseQty <- c( 10, 15, 20, 25, 30, 35 )
 probs <- c(.005, 0.0165, .025, .05, .25, .5, .75, .975, .995)
 MAXSALELOSS <- 0.02
+RISKFREERATE <- 0.006
 
 getStockTbbl <- function( stockSymbolChar, ... ){
   stockTbbl <- tq_get( toupper(stockSymbolChar),
@@ -37,8 +38,7 @@ stockDistributionMetric <- function( stockDailyLogReturnTbbl ){
     select( daily.returns ) %>% 
     pull() %>% exp() %>% 
     quantile(probs = probs, na.rm = TRUE)
-  return( dist_log_returns )
-}
+  return( dist_log_returns ) }
 stockDistributionMetricTbbl <- function( stockDailyLogReturnTbbl ){
   #probs <- c(.005, .025, .05, .25, .5, .75, .975, .995)
   dist_returns <- 
@@ -49,6 +49,25 @@ stockDistributionMetricTbbl <- function( stockDailyLogReturnTbbl ){
     as_tibble_row() %>% 
     mutate( qty=c(1) ) 
   return( dist_returns )
+}
+
+ExcessReturn <- function(stockTbbl){
+  excessR <- 
+    stockTbbl %>% 
+    tq_transmute(adjusted, periodReturn, period = "daily") %>%
+    tq_transmute(daily.returns, Return.clean, alpha = 0.05) %>%
+    tq_transmute(daily.returns, Return.excess, Rf = RISKFREERATE, col_rename="excess.return")
+  return(excessR)
+}
+
+SharpeRatio <- function( excessReturnTbbl ){
+  sharpeRatio <-
+    excessReturnTbbl$excess.return 
+
+  sharpeRatio <-
+    mean( sharpeRatio ) / sd( sharpeRatio ) 
+
+  return(sharpeRatio ) 
 }
 
 stockAvgDailyReturnRate <- function( stockDailyLogReturnTbbl ){
