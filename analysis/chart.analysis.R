@@ -191,6 +191,60 @@ macd.candlestick.Plots <- function( macdTbbl, stockTbbl, plotTitle="MACD Version
             label.x = buySignal ) 
 
 }
+
+TrendAnalysis2 <- function( stockTbbl ){
+
+  trend <- 
+    stockTbbl %>% 
+    EndOfTrend()
+ 
+  p1 <- 
+    trend %>% 
+    ggplot( aes(x=date) ) + geom_line( aes(y=close) ) + 
+    geom_line( aes(y=open.close.cycle, colour="OpenCloseVol") )
+  p2 <- 
+    trend %>% 
+    ggplot( aes(x=date) ) + geom_line( aes(y=close) ) +
+    geom_line( aes( y=high.low.cycle, colour="HighLowVol" ) )
+  p3 <- 
+    trend %>% 
+    ggplot( aes(x=date) ) + geom_line( aes(y=close)) + 
+    geom_line( aes( y=high.trend, colour="High" ) )
+
+  p4 <- 
+    trend %>% 
+    ggplot( aes(x=date) ) + 
+    geom_line( aes(y=close)) + 
+    geom_line( aes( y=low.trend, colour="Low" ) )
+
+  ticker <-
+    stockTbbl %>% 
+    select( symbol ) %>% 
+    unique %>% 
+    paste( collapse="" ) 
+
+  fileName1 <- 
+    paste( "/home/joel/Documents/stocks/research/plots/volatiltyPlots", 
+            ticker, "_OpenClose_HighLow.png", sep="" ) 
+  fileName2 <- 
+    paste( "/home/joel/Documents/stocks/research/plots/volatiltyPlots", 
+          ticker, "_High_Low.png", sep="" )
+  
+  gp1 <- 
+    ggarrange( p1, p2, nrow=2, ncol=1 ) 
+  gp2 <-
+    ggarrange( p3, p4, nrow=2, ncol=1 ) 
+
+  ggsave( fileName1, plot=gp1 ) 
+  ggsave( fileName2, plot=gp2 ) 
+
+}
+
+
+
+
+
+
 #tq_transmute(adjusted,mutate_fun = periodReturn ,period='daily', type='log')                                       
 # tq_mutate(select = close, mutate_fun = periodReturn,period='daily',type='log')  daily returns 
 # #sp500Material[1,] %>% pull(symboL) %>% getStockTibbl( ...) %>% chart.Candlesticks.Tbbl() 

@@ -118,9 +118,9 @@ marketWatchTableClean <- function( tableStatementList, n=1 ){
     } else {
       newCol <- 
         tableDF[-1,ii] %>%  #-1 is market watch row name
-        str_replace_all( "\\(|\\)", "" ) %>% 
         replaceBillion() %>% 
         replaceMillion() %>%
+        str_replace_all( "(\\()([0-9]*)(\\))", "-\\2" ) %>%   #looses 
         as.numeric() %>%  
         as_tibble_col( column_name=rowValues[ii] ) 
       mwTbbl <- 

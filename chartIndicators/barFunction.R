@@ -10,16 +10,18 @@ findDiscreteSlope <- function( stockTbbl ){
   return( slopeTbbl )
 }
 
-findDiscreteMin <- function( stockTbbl ){
-  localMin <-
-    stockTbbl %>%  
-    findDiscreteSlope %>% 
-    mutate_at( c("open", "high", "low", "close" ), ~(sign(lead(.)) - sign(.)) ) %>%
-    filter( close == 2 ) %>% 
-    select( date ) %>% 
-    left_join( stockTbbl ) 
-  return(localMin)
+localMin <- function( stockTbbl ){
+  localMin <- 
+    stockTbbl %>% 
+    mutate( low.point = pmin( close, open ) ) %>% 
+    mutate( high.point = pmax(close,open) ) %>% 
+    mutate( first.derivative = sign( lead( low.point ) - low.point ) ) %>%
+    mutate( second.derivative = lead(first.derivative) - first.derivative   ) 
+  return( localMin ) 
 }
+
+
+
 
 chart.BAR <- function( stockTbbl, plotTitle="BAR Graph Version 1.1", zoomDays=21 ){ 
  

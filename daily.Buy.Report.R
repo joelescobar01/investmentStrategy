@@ -17,53 +17,9 @@ buyReportMaterials <- function(){
   generateBuyReport(symbols=basic_symbols() )
 }
 
-generateBuyReport <- function(  symbols=c() ){
-  for(ii in seq_along(symbols)){
-    ticker <- symbols[ii]
-    data1 <- NULL                               # NULL data1
-    data1 <- tryCatch(tq_get(ticker,  
-                               get = "stock.prices", 
-                               from=fromDate,
-                               complete_cases=TRUE),
-                    error=function(e){})      # empty function for error handling
-    
-    if(is.null(data1)) next()
-    
-    print(ticker) 
-
-    macd.Signal <- 
-      signal.Buy.MACD( data1, symbol=ticker )
-    rsi.Signal <- 
-      signal.Buy.RSI( data1, symbol=ticker )
-    
-    filePath <- paste( directory, ticker, sep="/" )
-    
-    if( is.na(macd.Signal) )
-      next() 
-    
-    if( is.na(rsi.Signal) )
-      next()
-    
-    risk <- 
-      data1 %>%  
-      riskAnalysis  
-
-    print(filePath)
-    
-    fileName <- paste( filePath, "MACD.png", sep="_")
-    ggsave( fileName, plot=macd.Signal )
-    
-    fileName <- paste( filePath, "RSI.png", sep="_" )
-    ggsave( fileName, plot=rsi.Signal ) 
-        
-    fileName <- paste( directory, "BAR.png", sep="_") 
-    p1 <- chart.BAR( data1, ticker )    
-    ggsave( fileName, plot=p1 ) 
-  }
-}
-
-generateBuyReport2 <- function(  symbols=c(), purchaseLimit=150.00 ){
+generateBuyReport <- function(  symbols=c(), purchaseLimit=150.00 ){
   validTickers <- c() 
+  ratioList <- c() 
   for(ii in seq_along(symbols)){
     ticker <- symbols[ii]
     data1 <- NULL                               # NULL data1
@@ -129,7 +85,7 @@ generateBuyReport2 <- function(  symbols=c(), purchaseLimit=150.00 ){
     periodVolatility <- 
       TimePeriodVolatility2( data1 )
     
-    print(periodVolatility )
+    
     if( !is_tibble( periodVolatility ) )
       next() 
 
@@ -149,13 +105,17 @@ generateBuyReport2 <- function(  symbols=c(), purchaseLimit=150.00 ){
 			mutate_all( funs(round(., 4))) %>%
 			select( qty, everything() ) 
     
-    sharpeRatio <-
-      ExcessReturn() %>% 
+    sRatio <-
+      excessReturnRate %>% 
       SharpeRatio() 
 
 		validTickers <-  
       validTickers %>% 
       append( ticker ) 
+
+    ratioList <- 
+      ratioList %>% 
+      append( sRatio )
 
     p1 <- chart.BAR( data1, ticker )    
     
@@ -211,8 +171,52 @@ generateBuyReport2 <- function(  symbols=c(), purchaseLimit=150.00 ){
     
     ggsave(fileName3, plot=gp3) 
   }
-
-  return( validTickers ) 
+  
+  
 }
 
 
+# c() %>% generateBuyReportBatch() %>% group_by( symbol ) %>% filter(
+# !is.na(macd.indictor) & !is.na(rsi.indicator)) %>% do( plot=printTibblePlot(.) ) 
+
+generateBuyReportBatch <- function(  symbols=c(), purchaseLimit=150.00 ){
+    data1 <- NULL                               # NULL data1
+    data1 <- tryCatch(tq_get( symbols,  
+                               get = "stock.prices", 
+                               from=fromDate,
+                               complete_cases=TRUE) %>% 
+              group_by( symbol ),
+              error=function(e){})      # empty function for error handling
+    
+    data1.macd <- 
+      data1 %>% 
+      group_by( symbol ) %>% 
+      do( macd.indicator = signal.Buy.MACD( . ) )
+   data1.rsi <- 
+      data1 %>% 
+      group_by( symbol ) %>% 
+      do( rsi.indicator = signal.Buy.RSI( . ) ) 
+    
+    dataSignal <-
+      full_join( data1.macd, data1.rsi ) 
+
+    return( dataSignal ) 
+}
+
+printTibblePlot <- function( tibblePlot ){
+  fileName <- 
+    paste( tibblePlot$symbol, "_MACD", ".png", sep="", collapse="" ) 
+  fileName <- paste( directory, fileName, sep="/") 
+  p1 <- 
+    tibblePlot$macd.indicator[[1]] 
+  if( !is.na(p1) ) 
+    ggsave( fileName, plot=chart.MACD(p1)  ) 
+
+  fileName <- 
+    paste( tibblePlot$symbol, "_RSI", ".png", sep="", collapse="" ) 
+  fileName <- paste( directory, fileName, sep="/") 
+  p1 <- 
+    tibblePlot$rsi.indicator[[1]] 
+  if( !is.na(p1) ) 
+    ggsave( fileName, plot=chart.RSI(p1)  ) 
+}

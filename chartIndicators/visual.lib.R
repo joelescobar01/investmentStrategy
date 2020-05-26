@@ -36,3 +36,5 @@ chart.Add.HLine <- function( yIntercept, lineT="dashed", ... ){
 localMin <- function( stockTbbl ){
 
 }
+
+

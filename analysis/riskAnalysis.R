@@ -21,7 +21,7 @@ getStockTbbl <- function( stockSymbolChar, ... ){
   return(stockTbbl) 
 }
 
-stockDailyLogReturnsTbbl <- function ( stockTbbl ){
+stockDailyContinuouslyCompounded <- function ( stockTbbl ){
   dailyLogReturnsTbbl <- 
     stockTbbl %>% 
     tq_mutate(adjusted, 
@@ -29,6 +29,37 @@ stockDailyLogReturnsTbbl <- function ( stockTbbl ){
                  period = 'daily', 
                  type='log' ) 
   return(dailyLogReturnsTbbl)
+}
+
+WeeklyPriceAnalysis <- function( stockTbbl ){
+  price <-
+    stockTbbl %>% 
+    mutate( daily.returns = close-lag(close) )  %>% 
+    group_by( symbol, week = week(date), year=year(date) ) %>% 
+    summarize( weeks.mean = mean( daily.returns ), 
+                weeks.median=median(daily.returns), 
+                weeks.stdev = sd(daily.returns), 
+                weeks.lowhigh.stdev=sd(high-low), 
+                weeks.middle.50 = IQR(close, na.rm=TRUE), 
+                weeks.returns.middle.50=IQR(daily.returns, na.rm=TRUE)  ) %>% 
+    mutate( weeks.skew = 3*(weeks.mean-weeks.median)/weeks.stdev ) 
+    
+    return( price ) 
+}
+
+WeeklyPriceChange <- function( stockTbbl ){
+# quantile, or percentile, tells you how much of your data lies below a 
+  # certain value. The 50 percent quantile, for example, is the same as the median
+  quant <- 
+    stockTbbl %>% 
+    stockDailyLogReturnsTbbl %>% 
+    group_by( weeks  = week(date) ) %>% 
+    summarize( week.gain = mean( daily.returns ) ) %>% 
+    select( daily.returns )  %>% 
+    pull() %>% 
+    quantile( probs=c(0.2, 0.5, 0.8), na.rm=TRUE )
+
+  return( quant ) 
 }
 
 stockDistributionMetric <- function( stockDailyLogReturnTbbl ){
