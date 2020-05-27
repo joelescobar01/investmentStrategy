@@ -1,4 +1,5 @@
 library(quantmod)
+library( tidyquant ) 
 library(plotly)
 library(ggplot2)
 library(PerformanceAnalytics)

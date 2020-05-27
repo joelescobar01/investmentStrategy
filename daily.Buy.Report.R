@@ -1,179 +1,131 @@
 source('chartIndicators/macdFunction.R')
 source('chartIndicators/rsiFunction.R')
 source('chartIndicators/barFunction.R')
-source('analysis/riskAnalysis.R')
-source('chartIndicators/candlestickFunction.R')
-library( ggplot2 )
+source('data.transfer.lib.R')
 library( ggpubr )
 
 fromDate <- Sys.Date() - 180
 
 directory <- paste( getwd(), "research", format(Sys.time(), "%a_%b_%d_%Y"), sep="/" )
 
-buyReportMaterials <- function(){
-  directory <- paste( directory, "materials", sep="/" )
-  dir.create(directory, showWarnings = FALSE, recursive = FALSE, mode = "0777" ) 
-  source('var/materialSectorList.R')
-  generateBuyReport(symbols=basic_symbols() )
+stock.signal.init <- function( symbol.list ){
+  stock.data <- 
+    retrieve.stock.data( yahoo.fetch, symbol.list ) 
+  return( stock.data )
 }
 
-generateBuyReport <- function(  symbols=c(), purchaseLimit=150.00 ){
-  validTickers <- c() 
-  ratioList <- c() 
-  for(ii in seq_along(symbols)){
-    ticker <- symbols[ii]
-    data1 <- NULL                               # NULL data1
-    data1 <- tryCatch(tq_get(ticker,  
-                               get = "stock.prices", 
-                               from=fromDate,
-                               complete_cases=TRUE),
-                    error=function(e){})      # empty function for error handling
-    if(is.null(data1)) next()
-    if(!is_tibble(data1)) next()  
-    
-    data1 <- 
-      data1 %>% 
-      drop_na() 
+stock.signal.setup <- function( stock.data.tbbl ){
+  # setup table with correct equations 
+  #
+  stock.indicators.tbbl <-
+    stock.data.tbbl %>% 
+    group_by(symbol) %>% 
+    GetMACD() %>% 
+    GetRSI()
 
-    print(ticker) 
-    
-    macd.Signal <- 
-      signal.Buy.MACD( data1, symbol=ticker )
-    rsi.Signal <- 
-      signal.Buy.RSI( data1, symbol=ticker )
-    
-    print(ii)
+  return( stock.indicators.tbbl ) 
+}
 
-    if( is.na(macd.Signal) )
-      next() 
-    
-    if( is.na(rsi.Signal) )
-      next()
+stock.signal.min.qty <- function( stock.indicators.tbbl, max.price.per.stock=1000.00 ){
+  valid.stocks <-
+    stock.indicators.tbbl %>% 
+    slice( n() ) %>% 
+    filter( close < max.price.per.stock ) %>% 
+    select( symbol ) %>% 
+    left_join( stock.indicators.tbbl ) 
+  return( valid.stocks ) 
+}
+
+stock.signal.min.price <- function( stock.indicators.tbbl, min.price.per.stock=5.00 ){
+  valid.stocks <-
+    stock.indicators.tbbl %>% 
+    slice( n() ) %>% 
+    filter( close > min.price.per.stock ) %>% 
+    select( symbol ) %>% 
+    left_join( stock.indicators.tbbl ) 
+  return( valid.stocks ) 
+
+}
+
+stock.signal.macd <- function( stock.indicators.tbbl ){
+  valid.stocks <-
+    stock.indicators.tbbl %>% 
+    tail( n=4 ) %>% 
+    filter( macd < signal ) %>% 
+    select( symbol ) %>% 
+    left_join( stock.indicators.tbbl )
+  return( valid.stocks ) 
+}
+
+stock.signal.rsi <- function( stock.indicators.tbbl ) {
+  valid.stocks <-
+    stock.indicators.tbbl %>% 
+    tail( n=4 ) %>% 
+    filter( rsi < 50 ) %>% 
+    select( symbol ) %>% 
+    left_join( stock.indicators.tbbl )
+  return( valid.stocks ) 
+}
+
+stock.signal.run <- function( stockList ){
+  signal.run.result <- 
+    stock.signal.init( stockList ) %>% 
+    group_by( symbol ) %>%
+    stock.signal.setup %>% 
+    stock.signal.min.qty %>% 
+    stock.signal.min.price %>% 
+    stock.signal.macd %>% 
+    stock.signal.rsi 
+  return( signal.run.result ) 
+}
+
+search.stock.market <- function( ){
+  load("stockMarketTickers.Rds")
+  stockMarketTickers <-
+    stockMarketTickers$Symbol
+  stockSymbols <- 
+    split( stockMarketTickers, ceiling( seq_along( stockMarketTickers)/20) ) 
   
-    returnRate <- 
-      data1 %>%
-      filter( date >= "2020-03-20" ) %>% #adjust for the coronavirus  
-      DailyAnnualReturnRate() 
+  stock.data <-
+      stock.signal.run( stockSymbols[[1]] ) 
 
-    excessReturnRate <- 
-      data1 %>%
-      filter( date >= "2020-03-20" ) %>% #adjust for the coronavirus  
-      ExcessReturn()
+  for(ii in 2 ){
+    stock.data <-
+      stock.data %>% 
+      bind_rows( stock.signal.run( stockSymbols[[ii]] ) )
+  }
+  return( stock.data )
+} 
 
-    if( returnRate < 1 )
-      next() 
-
-    closePrice <- data1 %>% select( close ) %>% last %>% pull() 
+generateBuyReport <- function(  symbols=c(), purchaseLimit=100.00 ){ 
     
-    securityQty <- 
-      MaxQtyBuy( closePrice, purchaseLimit ) 
-    
-    if( securityQty < 10 )
-      next() 
-
-    roE <- 
-      stopLossAnalysis( data1 )
-
-    maxLoss <-
-      roE %>% 
-      select( "1.65%" ) %>% 
-      pull * securityQty
-    
-    if( maxLoss > 1500*0.02  )
-      next() 
-    
-    periodVolatility <- 
-      TimePeriodVolatility2( data1 )
-    
-    
-    if( !is_tibble( periodVolatility ) )
-      next() 
-
-    dailyAvgYield <-
-      roE %>% 
-      map( function(x) x*(0.5*securityQty) ) %>% 
-      as_tibble_row() 
-	  	
-		dailyAvgYield <-
-			roE %>% 
-		  map( function(x) x*(securityQty) ) %>% 
-      as_tibble_row() 
-		
-    dailyAvgYield <-
-      roE %>% 
-      add_row( dailyAvgYield ) %>%
-			mutate_all( funs(round(., 4))) %>%
-			select( qty, everything() ) 
-    
-    sRatio <-
-      excessReturnRate %>% 
-      SharpeRatio() 
-
-		validTickers <-  
-      validTickers %>% 
-      append( ticker ) 
-
-    ratioList <- 
-      ratioList %>% 
-      append( sRatio )
 
     p1 <- chart.BAR( data1, ticker )    
     
-    fileName <- paste( ticker, "png", sep="." )
-    fileName2 <- paste( "ROE_", ticker,".png", sep="") 
-    fileName3 <- paste( "Analysis_", ticker,".png", sep="") 
+    p2 <- 
+      data1 %>% 
+      chart.MACD( plotTitle = ticker ) 
+    p3 <- 
+      data1 %>% 
+      chart.RSI( plotTitle = ticker ) 
+
+    fileName <- paste( ticker, "_Bar.png", sep="" )
+    fileName2 <- paste( ticker,"_Indicator.png", sep="") 
+    fileName3 <- paste( ticker,"_Analysis.png", sep="") 
     fileName <- paste( directory, fileName, sep="/") 
     fileName2 <- paste( directory, fileName2, sep="/") 
     fileName3 <- paste( directory, fileName3, sep="/") 
 
-    returnRate <- paste( "Daily Return Rate:", returnRate ) 
     closePrice <- paste( "Latest Close Price:", closePrice ) 
     gp1 <- 
-      ggarrange(  macd.Signal, rsi.Signal, 
+      ggarrange(  p2, p3, 
                 align=c("v"), nrow=2, ncol=1  ) %>% 
       annotate_figure( bottom=text_grob( closePrice, color="green", face="italic", size=10), 
                         fig.lab = ticker, fig.lab.face = "bold")
-    
-    ggsave( fileName, plot=gp1 ) 
-  
-    g1 <- 
-      data1 %>% 
-      tail(n=7) %>% 
-      PastCumulativeReturns() %>% 
-      ChartPastCummulativeReturns()
-    p2 <- 
-      data1 %>% 
-      tail(n=7) %>% 
-      chart.Price.Daily( ) 
-    
-    gp2 <- 
-      ggarrange( p1, ggarrange( p2, g1, ncol=2 ),   
-                  nrow=2, ncol=1  ) %>% 
-      annotate_figure( top = text_grob( returnRate, 
-                                       color = "red", 
-                                       face = "bold", 
-                                       size = 14),
-                        bottom=text_grob("7 Trading Days Returns", color='green', face='italic', size=10), 
-                        fig.lab = ticker, fig.lab.face = "bold")
-   ggsave( fileName2, plot=gp2 )  
-    
-   p3 <- 
-    periodVolatility %>%   
-    ChartTimePeriodVolatility()       
-   p4 <-
-     ggtexttable( dailyAvgYield, 
-                  rows=NULL, cols = colnames(dailyAvgYield )) + theme_void() 
-    gp3 <-
-      ggarrange( p3, p4, 
-                nrow=2, ncol=1, heights=c(2,1) ) %>% 
-    annotate_figure( bottom=text_grob( "Average Daily Return", color='green', face="bold", size=10), 
-											fig.lab = ticker, fig.lab.face = "bold" )  
-    
-    ggsave(fileName3, plot=gp3) 
-  }
-  
-  
+    ggsave( fileName, plot=p1, width=20, height=9, units=c("in") ) 
+    ggsave( fileName2, plot=gp1, width=20, height=9, units=c("in")) 
 }
+  
 
 
 # c() %>% generateBuyReportBatch() %>% group_by( symbol ) %>% filter(
@@ -187,20 +139,64 @@ generateBuyReportBatch <- function(  symbols=c(), purchaseLimit=150.00 ){
                                complete_cases=TRUE) %>% 
               group_by( symbol ),
               error=function(e){})      # empty function for error handling
-    
-    data1.macd <- 
-      data1 %>% 
-      group_by( symbol ) %>% 
-      do( macd.indicator = signal.Buy.MACD( . ) )
-   data1.rsi <- 
-      data1 %>% 
-      group_by( symbol ) %>% 
-      do( rsi.indicator = signal.Buy.RSI( . ) ) 
-    
-    dataSignal <-
-      full_join( data1.macd, data1.rsi ) 
 
-    return( dataSignal ) 
+    data1 <- 
+      data1 %>% 
+      group_by( symbol ) %>% 
+      GetMACD() %>%
+      GetRSI() %>% 
+      mutate( rsi.buy.signal = rsi < 50 ) %>% 
+      mutate( macd.buy.signal = macd < signal ) %>%
+      mutate( buy.signal = rsi.buy.signal & macd.buy.signal ) 
+
+    buySymbols <- 
+      data1 %>% 
+      filter( row_number() >= (n()-5) & buy.signal ) %>% 
+      select( symbol ) %>% unique %>% pull 
+    
+    data1 <- 
+      data1 %>% 
+      ungroup %>% 
+      filter( symbol == buySymbols )    
+    
+    return( data1 ) 
+}
+
+
+generateBuyReportBatch2 <- function(  symbols=c(), purchaseLimit=150.00 ){
+    data1 <- NULL                               # NULL data1
+    data1 <- tryCatch(tq_get( symbols,  
+                               get = "stock.prices", 
+                               from=fromDate,
+                               complete_cases=TRUE) %>% 
+              group_by( symbol ),
+              error=function(e){})      # empty function for error handling
+  data1.macd <- 
+      data1 %>% 
+      group_by( symbol ) %>% 
+      do( macd.indicator = signal.Buy.MACD( . ) ) %>% 
+      mutate( macd.indicator = unlist( macd.indicator ) ) 
+
+  data1.rsi <- 
+      data1 %>% 
+      group_by( symbol ) %>% 
+      do( rsi.indicator = signal.Buy.RSI( . )  ) %>% 
+      mutate( rsi.indicator = unlist( rsi.indicator ) ) 
+
+  data1.momentum <- 
+      data1 %>% 
+      group_by( symbol ) %>% 
+      do( momentum.indicator = signal.Buy.Momentum( . )  ) %>% 
+      mutate( momentum.indicator = unlist( momentum.indicator ) ) 
+
+
+  dataSignal <-
+      full_join( data1.macd, data1.rsi )
+  dataSignal <- 
+    full_join( dataSignal, data1.momentum ) 
+
+
+  return( dataSignal ) 
 }
 
 printTibblePlot <- function( tibblePlot ){

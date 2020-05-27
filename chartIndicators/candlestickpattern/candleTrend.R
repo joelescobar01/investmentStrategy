@@ -50,3 +50,14 @@ UpTrend <- function(stockTbbl, delta=0.01, S=5, L=20) {
   return(candle)
 }
 
+UpTrend.Momentum <- function(stockTbbl, delta=0.01, S=5, L=20) {
+  candle <- 
+    stockTbbl %>% 
+    mutate( momentum.short = TTR::momentum( volume, n=S ) ) %>% 
+    mutate( momentum.long = TTR::momentum( volume, n=L ) ) %>% 
+    mutate( up.trend.momentum = (momentum.short/momentum.long)-1 > delta ) %>%
+    select( -momentum.short, -momentum.long ) 
+
+  return(candle)
+}
+
