@@ -1,6 +1,7 @@
 source('chartIndicators/macdFunction.R')
 source('chartIndicators/rsiFunction.R')
 source('chartIndicators/barFunction.R')
+source('visual.lib.R')
 source('data.transfer.lib.R')
 library( ggpubr )
 
@@ -8,97 +9,226 @@ fromDate <- Sys.Date() - 180
 
 directory <- paste( getwd(), "research", format(Sys.time(), "%a_%b_%d_%Y"), sep="/" )
 
+emptyTbbl <- function( stockTbbl ){
+  stockTbblCount <- 
+    stockTbbl %>% 
+    group_by( symbol ) %>% 
+    count() %>% 
+    filter( n > 0 ) %>% 
+    nrow()
+
+  return( stockTbblCount == 0 ) 
+}
+
 stock.signal.init <- function( symbol.list ){
   stock.data <- 
-    retrieve.stock.data( yahoo.fetch, symbol.list ) 
+    retrieve.stock.data( yahoo.fetch, symbol.list ) %>% 
+    drop_na()
+
   return( stock.data )
 }
 
 stock.signal.setup <- function( stock.data.tbbl ){
   # setup table with correct equations 
-  #
   stock.indicators.tbbl <-
     stock.data.tbbl %>% 
-    group_by(symbol) %>% 
-    GetMACD() %>% 
-    GetRSI()
+    group_by(symbol) 
 
   return( stock.indicators.tbbl ) 
 }
 
-stock.signal.min.qty <- function( stock.indicators.tbbl, max.price.per.stock=1000.00 ){
+stock.signal.min.qty <- function( stock.indicators.tbbl, min.qty=10, max.limit=100.00 ){
+  if( stock.indicators.tbbl %>% emptyTbbl() ){
+    print("Min. Qty Passed") 
+    return( stock.indicators.tbbl ) 
+  }
+  
   valid.stocks <-
     stock.indicators.tbbl %>% 
+    group_by( symbol ) %>% 
     slice( n() ) %>% 
-    filter( close < max.price.per.stock ) %>% 
+    filter( close*min.qty <= max.limit  ) %>% 
     select( symbol ) %>% 
-    left_join( stock.indicators.tbbl ) 
-  return( valid.stocks ) 
+    ungroup() 
+
+  stock.indicators.tbbl <-
+    stock.indicators.tbbl %>% 
+    ungroup() %>%  
+    right_join( valid.stocks ) %>% 
+    group_by( symbol )
+  
+  return( stock.indicators.tbbl ) 
 }
 
 stock.signal.min.price <- function( stock.indicators.tbbl, min.price.per.stock=5.00 ){
+  if( stock.indicators.tbbl %>% emptyTbbl() ){
+    print("Min. Price Passed") 
+    return( stock.indicators.tbbl ) 
+  }
+  
   valid.stocks <-
-    stock.indicators.tbbl %>% 
-    slice( n() ) %>% 
+    stock.indicators.tbbl %>%
+    group_by( symbol ) %>% 
+    last() %>% 
     filter( close > min.price.per.stock ) %>% 
-    select( symbol ) %>% 
-    left_join( stock.indicators.tbbl ) 
-  return( valid.stocks ) 
+    select( symbol )
 
+  stock.indicators.tbbl <-
+    stock.indicators.tbbl %>% 
+    ungroup() %>%  
+    right_join( valid.stocks ) %>% 
+    group_by( symbol ) 
+  
+  return( stock.indicators.tbbl ) 
 }
 
-stock.signal.macd <- function( stock.indicators.tbbl ){
-  valid.stocks <-
+stock.signal.uptrend <- function( stock.indicators.tbbl ){
+  if( stock.indicators.tbbl %>% emptyTbbl() ){
+    print("Uptrend Passed") 
+    return( stock.indicators.tbbl ) 
+  }
+ 
+  stock.indicators.tbbl <-
     stock.indicators.tbbl %>% 
-    tail( n=4 ) %>% 
-    filter( macd < signal ) %>% 
+    group_by( symbol ) %>% 
+    mutate( short.MA = TTR::SMA( close, n=20 ) ) %>% 
+    mutate( long.MA = TTR::SMA( close, n=50 ) ) 
+
+  valid.stocks <- 
+    stock.indicators.tbbl %>% 
+    slice( (n()-5):n() ) %>% 
+    filter( short.MA > long.MA ) %>% 
     select( symbol ) %>% 
-    left_join( stock.indicators.tbbl )
-  return( valid.stocks ) 
+    ungroup 
+
+  stock.indicators.tbbl <-
+    stock.indicators.tbbl %>% 
+    ungroup() %>%  
+    right_join( valid.stocks ) %>% 
+    group_by( symbol )
+
+  return( stock.indicators.tbbl ) 
+}
+
+
+stock.signal.macd <- function( stock.indicators.tbbl ){
+  if( stock.indicators.tbbl %>% emptyTbbl() ){
+    print("MACD Passed") 
+    return( stock.indicators.tbbl ) 
+  }
+  
+  stock.indicators.tbbl <-
+    stock.indicators.tbbl %>%
+    group_by(symbol) %>% 
+    GetMACD() 
+  
+  valid.stocks <- 
+    stock.indicators.tbbl %>%
+    group_by( symbol ) %>% 
+    last(n=3) %>% 
+    group_by(symbol) %>% 
+    filter( macd < signal ) %>% 
+    select( symbol ) 
+
+  stock.indicators.tbbl <-
+    stock.indicators.tbbl %>% 
+    ungroup() %>%  
+    right_join( valid.stocks ) %>% 
+    group_by( symbol )  
+    
+  return(stock.indicators.tbbl ) 
 }
 
 stock.signal.rsi <- function( stock.indicators.tbbl ) {
-  valid.stocks <-
+  if( stock.indicators.tbbl %>% emptyTbbl() ){
+    print("RSI Passed") 
+    return( stock.indicators.tbbl ) 
+  }
+ 
+
+  stock.indicators.tbbl <-
+    stock.indicators.tbbl %>%
+    group_by(symbol) %>% 
+    GetRSI() 
+  
+  valid.stocks <- 
     stock.indicators.tbbl %>% 
-    tail( n=4 ) %>% 
-    filter( rsi < 50 ) %>% 
-    select( symbol ) %>% 
-    left_join( stock.indicators.tbbl )
-  return( valid.stocks ) 
+    group_by(symbol) %>% 
+    last(n=3) %>%
+    group_by(symbol) %>% 
+    filter( rsi < 70 ) %>%
+    group_by(symbol) %>% 
+    select( symbol )  
+  
+  return( stock.indicators.tbbl ) 
 }
 
 stock.signal.run <- function( stockList ){
   signal.run.result <- 
     stock.signal.init( stockList ) %>% 
-    group_by( symbol ) %>%
-    stock.signal.setup %>% 
-    stock.signal.min.qty %>% 
-    stock.signal.min.price %>% 
-    stock.signal.macd %>% 
-    stock.signal.rsi 
+    group_by(symbol) %>% 
+    stock.signal.min.qty() %>% 
+    group_by(symbol ) %>% 
+    stock.signal.min.price() %>% 
+    group_by(symbol ) %>%
+    stock.signal.macd() %>% 
+    group_by(symbol ) %>%
+    stock.signal.rsi() 
   return( signal.run.result ) 
 }
 
-search.stock.market <- function( ){
-  load("stockMarketTickers.Rds")
+
+stock.plot.macd <- function( stock.signal ){
+  plotTbbl <- 
+    stock.signal %>% 
+    do( plot.macd = chart.MACD(., .$symbol) ) 
+
+  return( plotTbbl ) 
+}
+
+stock.plot <- function( stock.signal ){
+  plotTbbl <- 
+    stock.signal %>% 
+    do( 
+       plot.macd = chart.MACD(., plotTitle = .$symbol, zoomDays=300),
+       plot.rsi = chart.RSI(., plotTitle = .$symbol, zoomDays=300),
+       plot.bar = chart.BAR(., plotTitle = .$symbol, zoomDays=100 ) ) 
+
+  return( plotTbbl ) 
+}
+
+stock.plot.save <- function( stock.plot ){
+  
+  stock.plot %>% 
+    pmap_dfr( function(...){   
+              fileName <- paste( ..1, "_Bar.png", sep="", collapse="" ) 
+              fileName2 <- paste( ..1,"_Indicator.png", sep="", collapse="") 
+              gp1 <- ggarrange( ..2, ..3, nrow=2, ncol=1 )
+              ggsave( fileName , plot=..4, 
+                      width=19, height=10, units=c("in") )
+              ggsave( fileName2, plot=gp1, 
+                      width=19, height=10, units=c("in") )
+       })
+  return()
+}
+
+
+search.stock.market <- function( tickers ){
   stockMarketTickers <-
-    stockMarketTickers$Symbol
+    tickers  
   stockSymbols <- 
     split( stockMarketTickers, ceiling( seq_along( stockMarketTickers)/20) ) 
-  
   stock.data <-
-      stock.signal.run( stockSymbols[[1]] ) 
-
-  for(ii in 2 ){
+    NULL
+  for(ii in seq_along(stockSymbols) ){
     stock.data <-
       stock.data %>% 
-      bind_rows( stock.signal.run( stockSymbols[[ii]] ) )
+      bind_rows( stock.signal.run( stockSymbols[[ii]] ) ) 
   }
   return( stock.data )
 } 
 
-generateBuyReport <- function(  symbols=c(), purchaseLimit=100.00 ){ 
-    
+stock.Chart <- function( stock ){ 
 
     p1 <- chart.BAR( data1, ticker )    
     

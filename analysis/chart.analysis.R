@@ -3,6 +3,67 @@ library(ggplot2)
 library(tidyquant)
 library(ggpubr) 
 
+detectSupportResistance <- function(timeSeries, tolerance=0.01, 
+                                    nChunks=10, nPoints=3, plotChart=TRUE){
+    #detect maximums and minimums
+    N = length(timeSeries)
+    stp = floor(N / nChunks)
+    minz = array(0.0, dim=nChunks)
+    whichMinz = array(0, dim=nChunks)
+    maxz = array(0.0, dim=nChunks)
+    whichMaxz = array(0, dim=nChunks)
+    for(j in 1:(nChunks-1)) 
+    {
+        lft = (j-1)*stp + 1  #left and right elements of each chunk
+        rght = j*stp
+        whichMinz[j] = which.min(timeSeries[lft:rght]) + lft
+        minz[j] = min(timeSeries[lft:rght])
+        whichMaxz[j] = which.max(timeSeries[lft:rght]) + lft
+        maxz[j] = max(timeSeries[lft:rght])
+    }   
+    #last chunk
+    lft = j*stp + 1  #left and right elements of each chunk
+    rght = N
+    whichMinz[nChunks] = which.min(timeSeries[lft:rght]) + lft
+    minz[nChunks] = min(timeSeries[lft:rght])
+    whichMaxz[nChunks] = which.max(timeSeries[lft:rght]) + lft
+    maxz[nChunks] = max(timeSeries[lft:rght])
+     
+    result = list()
+    result[["minima"]] = NULL
+    result[["minimaAt"]] = NULL
+    result[["maxima"]] = NULL
+    result[["maximaAt"]] = NULL
+    span = tolerance*(max(maxz) - min(minz))
+     
+    rang = order(minz)[1:nPoints]
+    if((minz[rang[nPoints]] - minz[rang[1]]) <= span)
+    {
+        result[["minima"]] = minz[rang[1:nPoints]]
+        result[["minimaAt"]] = whichMinz[rang[1:nPoints]]
+    } 
+     
+    rang = order(maxz, decreasing = TRUE)[1:nPoints]
+    if((maxz[rang[1]] - maxz[rang[nPoints]]) <= span)
+    {
+        result[["maxima"]] = maxz[rang[1:nPoints]]
+        result[["maximaAt"]] = whichMaxz[rang[1:nPoints]]
+    } 
+     
+    if(plotChart)
+    {
+        ts.plot(timeSeries)
+        points(whichMinz, minz, col="blue")
+        points(whichMaxz, maxz, col="red")
+        if(!is.null(result[["minima"]])  &&  !is.null(result[["minimaAt"]]))
+            abline(lm(result[["minima"]] ~  result[["minimaAt"]]))
+        if(!is.null(result[["maxima"]])  &&  !is.null(result[["maximaAt"]]))
+            abline(lm(result[["maxima"]] ~  result[["maximaAt"]]))
+    } 
+     
+    return(result)    
+}
+
 chart.VolatilityCloseToClose <- function( stockOHLC, endDate=Sys.Date(), startDate=Sys.Date()-90, 
                                          plotTitle="Volatility Close Chart 0.1"){
   ohlc <- stockOHLC[,1:4]

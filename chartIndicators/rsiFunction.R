@@ -8,8 +8,7 @@ GetRSI <- function(stockTbbl, days=9  ){
       tq_mutate(select     = close, 
                 mutate_fun = RSI,
                 n=days,
-                maType     = EMA) %>%
-     drop_na()}, 
+                maType     = EMA)}, 
     error = function(e){
       stockTbbl %>% mutate( rsi = NA ) 
    })

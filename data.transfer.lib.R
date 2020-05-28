@@ -68,7 +68,8 @@ yahoo.Stock.Prices <- function( stock.list, ... ){
   stock.prices <- 
     stock.list %>% 
     tq_get( get = "stock.prices", 
-                          complete_cases=TRUE, 
+                          complete_cases=TRUE,
+                          from="2019-01-01",
                    ... )
   return( stock.prices ) 
 }

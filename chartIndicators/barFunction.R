@@ -37,9 +37,9 @@ chart.BAR <- function( stockTbbl, plotTitle="BAR Graph Version 1.1", zoomDays=21
             y="Closing Price", 
             x="Date") +
       coord_cartesian(xlim=c( 
-                            nth(stockTbbl$date,n=1)+days(zoomDays), 
+                            nth(stockTbbl$date,n=-1)-days(zoomDays), 
                             nth(stockTbbl$date,n=-1)) )+ 
-      theme_gray() 
+      max.plot.space()  
     return(g1) 
 }
 
