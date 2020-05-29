@@ -3,35 +3,35 @@ library(tidyverse)
 calculateGrossProfit <- function( incomeStatementTbl ){
   incomeStatementTbl <- 
     incomeStatementTbl %>%
-    mutate( Gross.Profit.Margin = Gross.Income/Gross.Revenue ) 
-  
+    mutate( Gross.Profit.Margin = gross.income/revenue ) 
+  return( incomeStatementTbl )  
 }
 
 calculateOperatingMargin <- function( incomeStatementTbl ){
   incomeStatementTbl <- 
     incomeStatementTbl %>% 
-    mutate( Operating.Margin = EBITDA/Gross.Revenue )
+    mutate( Operating.Margin = EBITDA/revenue )
   return( incomeStatementTbl ) 
 }
 
 calculateInterestCoverageRatio <- function( incomeStatementTbl ){
   incomeStatementTbl <- 
     incomeStatementTbl %>% 
-    mutate( Interest.Coverage = EBITDA/Interest.Expenses )
+    mutate( Interest.Coverage = EBITDA/interest.expenses )
   return( incomeStatementTbl ) 
 }
 
 calculateNetProfitMargin <- function( incomeStatementTbl ){
   incomeStatementTbl <-
     incomeStatementTbl %>% 
-    mutate( Net.Profit.Margin = Net.Income/Gross.Revenue )
+    mutate( Net.Profit.Margin = net.income/revenue )
   return( incomeStatementTbl )
 }
 
 calculateReturnOnSales <- function( incomeStatementTbl ){
   incomeStatementTbl <-
     incomeStatementTbl %>%
-    mutate( Return.On.Sales = EBITDA/Gross.Revenue )
+    mutate( Return.On.Sales = EBITDA/revenue )
   
   return( incomeStatementTbl )
 }
