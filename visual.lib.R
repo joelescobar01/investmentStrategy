@@ -3,19 +3,13 @@ library(tidyverse)
 library(tidyquant)
 library(ggplot2)
 
-
-chart.Default.Primitive <- function( tsTibbleObj ){
-  g1 <- ggplot( tsTibbleObj, aes(x=date)) 
-  return(g1) 
-}
-
-chart.Default.Scale <- function( gg.Plot ){
-  gg.Plot <-
-    gg.Plot + scale_x_date( date_labels= "%m/%d/%y",
-                            date_breaks = "1 month",
-                            date_minor_breaks = "1 week" ) + 
-    scale_y_continuous( expand=c(0,0) )
-  return(gg.Plot)
+zoom.last_n <- function( stockTbbl, n=14 ){
+  zoom <- 
+    coord_cartesian(xlim=c( 
+                            nth(stockTbbl$date,n=-1)-days(n), 
+                            nth(stockTbbl$date,n=-1)) 
+                    )
+  return( zoom ) 
 }
 
 max.plot.space <- function(){
@@ -29,9 +23,15 @@ max.plot.space <- function(){
 
 scale.date.axis <- function(){
   sc <- 
-    scale_x_date (  date_labels="%Y/%m", 
-                    date_breaks='1 months', 
-                    minor_breaks='2 weeks' )
+  scale_x_date (  labels=scales::label_date_short(), 
+                    date_breaks='1 months',
+                    date_minor_breaks='5 days'  )
   
   return(sc) 
+}
+
+scale.price.axis <- function(){
+
+  sc <- 
+      scale_y_continuous(labels = scales::dollar_format() )
 }

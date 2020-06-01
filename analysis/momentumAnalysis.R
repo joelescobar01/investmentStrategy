@@ -2,11 +2,105 @@ library(tidyverse)
 library(dplyr )
 library( tidyquant )
 library( gt )
+library(ggplot2)
 source("chartIndicators/macdFunction.R") 
 library( ggpubr ) 
 # PipeLines for stock 
 # Adds columns of TRUE/FALSE wether signal is met
 
+
+VolumeTrendAnalysis <- function( stockTbbl ) {
+  volume.roc <- 
+    stockTbbl %>% 
+    transmute( volume.trend = sign( TTR::ROC( volume ) ) ) %>% 
+    replace( is.na(.), 0 ) 
+
+  volume.count <- 
+    volume.roc %>% 
+    nrow() 
+   
+  volume.trend <-
+    volume.roc %>% 
+    pull() %>% 
+    sum() 
+
+  volume.trend <- 
+    1 - (volume.count - volume.trend )/volume.count 
+  # the percent of trend movement is:
+  #   Up: volume.trend*100% certain (positive) 
+  #   Down: volume.trend*100% certain (negative)
+  #
+  # High the percetange the more likely 
+  return( volume.trend ) 
+}
+
+PriceTrendAnalysis <- function( stockTbbl ) {
+  price.roc <- 
+    stockTbbl %>% 
+    transmute( price.trend = TTR::ROC( pmax(close,open ))  ) %>% 
+    replace( is.na(.), 0 ) 
+
+  price.count <- 
+    price.roc %>% 
+    nrow() 
+   
+  price.trend <-
+    price.roc %>% 
+    pull() %>% 
+    sum() 
+
+  price.trend <- 
+    1 - (price.count - price.trend )/price.count 
+  # the percent of trend movement is:
+  #   Up: price.trend*100% certain (positive) 
+  #   Down: price.trend*100% certain (negative)
+  #
+  # High the percetange the more likely 
+  return( price.trend ) 
+}
+
+dateIntervalSummary <- function( stockTbbl, nDays='7 day' ) {
+  weekStock <- 
+    stockTbbl %>% 
+    group_by( week = floor_date(date, nDays), year=year(date), 
+             daily.min=pmin(open,close), daily.max=pmax(open,close) ) %>%
+    group_by( week ) %>% 
+    slice( which.min( daily.min), which.max( daily.max) ) 
+  return(weekStock) 
+}
+
+supportResistanceLines <- function( stockTbbl, nChunks='1 month', nPoints=3 ){
+    #detect maximums and minimums
+
+    chunkStock <- 
+      stockTbbl %>% 
+      dateIntervalSummary(nDays=nChunks) 
+    
+    localMin <- 
+      chunkStock %>%
+      group_by( week ) %>% 
+      slice( which.min( pmin(open,close) ) ) %>% 
+      select( date, close, open) %>% 
+      mutate( daily.min = pmin( close, open ) ) %>%
+      ungroup
+
+    localMax <- 
+      chunkStock %>%
+      group_by( week ) %>% 
+      slice( which.max( daily.max ) ) %>% 
+      select( date, close, open) %>% 
+      mutate( daily.max = pmax( close, open ) ) %>% 
+      ungroup
+
+    p <- 
+      ggplot( data = stockTbbl, aes(x=date) ) + 
+      geom_line( aes(y=close) ) +
+      geom_line( data=localMin, aes( x=date, y=daily.min), color='blue') +
+      geom_line( data=localMax, aes( x=date, y=daily.max), color='red' ) + 
+      theme()
+    
+    return(p)    
+}
 
 VolumeRangeMinLimit <- function( stockTbbl, minLimit=1000000 ){
   minVolume <-
@@ -14,6 +108,25 @@ VolumeRangeMinLimit <- function( stockTbbl, minLimit=1000000 ){
     mutate( volume.trade = volume >= minLimit ) 
   return( minVolume ) 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 AboveAvgTradeVolume.Signal <- function( stockTbbl ){
   tradeVolumeStockTbl <- 

@@ -2,6 +2,23 @@ library(tidyverse)
 library(ggplot2)
 library(tidyquant)
 library(ggpubr) 
+source("visual.lib.R")
+
+chart.SectorDailyReturns <- function( ){
+
+  sectorPerformance <- 
+    c("IXM", "IXE", "IXT", "IXB", "IXY", "SPX", "IXU", "IXV", "IXR" ) %>% 
+    yahoo.Stock.Prices(from="2020-04-01") %>% 
+    group_by( symbol ) %>%  
+    ggplot( aes( x=date) ) + 
+    geom_col( aes(y=(close-open), fill=sign(close-open) ) ) + 
+    scale_y_continuous(labels = scales::dollar_format()) + 
+    facet_wrap(~symbol) + 
+    labs( y="Daily Returns" ) + 
+    scale_fill_gradient(low="red", high="green" ) + 
+    guides(fill="none")
+  return( sectorPerformance ) 
+}
 
 detectSupportResistance <- function(timeSeries, tolerance=0.01, 
                                     nChunks=10, nPoints=3, plotChart=TRUE){
@@ -171,88 +188,6 @@ charVolatilityGK <- function(stock, endDate=Sys.Date(), startDate=Sys.Date()-90,
          labs( x="OHLC Rogers and Satchell")
 }
 
-chart.Candlesticks.Tbbl <- function( stockTbbl, plotTitle="Candlestick Tibble Version 0.1", 
-                                endDate=Sys.Date(), startDate=endDate-90 ){
-    g1 <- 
-      ggplot(stockTbbl, aes(x = date, y = close)) +
-      geom_candlestick(aes(open = open, high = high, low = low, close = close)) +
-      geom_ma(color='red', ma_fun = SMA, n = 8 , linetype = 5, size = 1.25) +  
-      geom_ma(color='blue', ma_fun = SMA, n =13 , linetype = 5, size = 1.25) +  
-      labs(title = plotTitle, y = "Closing Price", x = "", subtitle="13 Day Moving Average", 
-           caption= "red = 8 day MA, blue = 13 day MA" ) + 
-        scale_x_date(lim = ( as.Date(c(startDate, endDate )) ),
-                     breaks = as.Date( seq(startDate, endDate, by="2 weeks")),
-                     minor_breaks = as.Date( seq(startDate, endDate, by="3 days") )) +
-      theme_tq() 
-     return(g1)
-}
-
-chartMACD <- function( macdTbbl, plotTitle="MACD Version 0.1", 
-                     endDate=Sys.Date(), startDate=endDate-90 ){
-    buySignal <- 
-      macdTbbl %>% 
-      filter(crossover>0) %>% 
-      select(date) %>% 
-      filter(date >= startDate, date <= endDate ) %>%
-      pull()  
-   
-  sellSignal <- 
-      macdTbbl %>% 
-      filter(crossover<0) %>% 
-      select(date) %>%
-      filter(date >= startDate, date <= endDate ) %>% 
-      pull()  
-
-    g1 <- ggplot( macdTbbl, aes(x=date)) + 
-        geom_col( aes(y=diff ) ) + 
-        geom_line( aes(y=macd, colour="MACD") ) + 
-        geom_line( aes(y=signal, colour="Signal"),size=3 ) +
-        geom_hline( aes(yintercept = 0), linetype="dashed") +
-        geom_vline( xintercept=buySignal, color="orange", linetype="dashed" ) +
-        geom_vline( xintercept=sellSignal, color="blue" , linetype="dashed" ) +
-        labs(title=plotTitle, subtitle="Minor ticks = 3 days, Buy Signal = Orange, Sell Signal = Blue", y="", x="Date",
-                caption="nFast=12, nSlow=26, nSig=9, maType=EMA") + 
-        scale_x_date(lim = ( as.Date(c(startDate, endDate )) ),
-                     breaks = as.Date( seq(startDate, endDate, by="2 weeks")),
-                     minor_breaks = as.Date( seq(startDate, endDate, by="3 days") )) +
-        scale_colour_manual(values=c("red","green")) +
-        scale_fill_manual(values = alpha(c("red", "green"), .3)) + 
-        theme(legend.position = c(0.1, 0.2))
-    # Note that, the argument legend.position can be also a numeric vector c(x,y). 
-    #In this case it is possible to position the legend inside the plotting area. x and y 
-    #are the coordinates of the legend box. Their values should be between 0 and 1. c(0,0) 
-    #corresponds to the “bottom left” and c(1,1) corresponds to the “top right” position.
-    
-    return(g1)
-}
-
-
-
-macd.candlestick.Plots <- function( macdTbbl, stockTbbl, plotTitle="MACD Version 0.1", 
-                     endDate=Sys.Date(), startDate=endDate-90 ){
-
-    buySignal <- 
-      macdTbbl %>% 
-      filter(crossover>0) %>% 
-      select(date) %>% 
-      filter(date >= startDate, date <= endDate ) %>%
-      pull()  
-   
-  sellSignal <- 
-      macdTbbl %>% 
-      filter(crossover<0) %>% 
-      select(date) %>%
-      filter(date >= startDate, date <= endDate ) %>% 
-      pull()  
- 
-  g1 <- chart.Candlesticks.Tbbl(stockTbbl) 
-  g2 <- chartMACD( macdTbbl ) 
-  
-  ggarrange(g1, g2, ncol=1, nrow=2, 
-            label.x = buySignal ) 
-
-}
-
 TrendAnalysis2 <- function( stockTbbl ){
 
   trend <- 
@@ -299,6 +234,44 @@ TrendAnalysis2 <- function( stockTbbl ){
   ggsave( fileName1, plot=gp1 ) 
   ggsave( fileName2, plot=gp2 ) 
 
+}
+
+supportResistanceLines <- function( stockTbbl, nChunks='1 month', nPoints=3 ){
+    #detect maximums and minimums
+
+    chunkStock <- 
+      stockTbbl %>% 
+      dateIntervalSummary(nDays=nChunks) 
+    
+    localMin <- 
+      chunkStock %>%
+      group_by( week ) %>% 
+      slice( which.min( pmin(open,close) ) ) %>% 
+      select( date, close, open) %>% 
+      mutate( daily.min = pmin( close, open ) ) %>%
+      ungroup
+
+    localMax <- 
+      chunkStock %>%
+      group_by( week ) %>% 
+      slice( which.max( daily.max ) ) %>% 
+      select( date, close, open) %>% 
+      mutate( daily.max = pmax( close, open ) ) %>% 
+      ungroup
+
+    p <-
+      stockTbbl %>% 
+      drop_na() %>% 
+      ggplot( aes(x=date) ) + 
+      geom_line( aes(y=close) ) +
+      geom_line( data=localMin, aes( x=date, y=daily.min), color='blue') +
+      geom_line( data=localMax, aes( x=date, y=daily.max), color='red' ) + 
+      max.plot.space() +
+      scale.date.axis() + 
+      scale.price.axis() +  
+      theme()
+    
+    return(p)    
 }
 
 

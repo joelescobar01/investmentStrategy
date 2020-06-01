@@ -4,13 +4,10 @@ library(tidyquant)
 library(ggplot2)
 source('visual.lib.R')
 
-# finds stocks that signal a nearby buy 
-#signal.MACD.BUY <- function( stockTbbl, nDays=7 ){
-    
-GetMACD <- function(stockTbbl, fast=3, slow=10, signal=16 ){
+GetMACD <- function(stockTbbl, fast=12, slow=26, signal=9 ){
   stockMACDTbbl <- tryCatch({  
     stockTbbl %>% 
-    tq_mutate(select     = adjusted, 
+    tq_mutate(select     = close, 
                 mutate_fun = MACD, 
                 nFast      = fast, 
                 nSlow      = slow,
@@ -23,20 +20,6 @@ GetMACD <- function(stockTbbl, fast=3, slow=10, signal=16 ){
   return(stockMACDTbbl) 
 }
 
-
-
-signal.MACD <- function( macdTbbl, nDays=5, symbol="MACD" ){
-    
-  macdTbbl <- tryCatch({ 
-    macdTbbl %>% 
-    mutate( macd.buy.signal = macd < signal ) 
-  }, 
-  error=function(e) {
-      macdTbbl %>% mutate( macd.buy.signal = FALSE ) 
-  })
-
-  return( macdTbbl )  
-}
 chart.MACD <- function( macdTbbl,plotTitle="MACD Version 1.2",zoomDays=21 ){
   macdTbbl <- 
     macdTbbl %>% 
@@ -63,11 +46,9 @@ chart.MACD <- function( macdTbbl,plotTitle="MACD Version 1.2",zoomDays=21 ){
               y="", 
               x="Date") + 
         scale_fill_gradient(guide=NULL, name=NULL, low = alpha("red",.5), high = alpha("green",.5))+
-        coord_cartesian(xlim=c( 
-                            nth(macdTbbl$date,n=1)+days(zoomDays), 
-                            nth(macdTbbl$date,n=-1)) )+ 
-        max.plot.space() 
-
+        zoom.last_n( macdTbbl, n=zoomDays ) + 
+        scale.date.axis() + 
+      max.plot.space()   
     # Note that, the argument legend.position can be also a numeric vector c(x,y). 
     #In this case it is possible to position the legend inside the plotting area. x and y 
     #are the coordinates of the legend box. Their values should be between 0 and 1. c(0,0) 

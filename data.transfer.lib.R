@@ -50,7 +50,7 @@ quandl.Stock.Prices <- function( stock.list, ... ){
   return( stockPrice ) 
 }
 
-alphavantage.Stock.Prices <- function( stock.list, time.interval="30min",... ){
+alphavantage.Stock.Prices.Intraday <- function( stock.list, time.interval="30min",... ){
   interval.stock.prices <- 
     stock.list %>% 
     tq_get(get = "alphavantage", 
@@ -64,12 +64,23 @@ alphavantage.Stock.Prices <- function( stock.list, time.interval="30min",... ){
     return( interval.stock.prices ) 
 }
 
+alphavantage.Stock.Prices.Daily <- function( stock.list, ... ){
+  interval.stock.prices <- 
+    stock.list %>% 
+    tq_get(get = "alphavantage", 
+           av_fun = "TIME_SERIES_DAILY", 
+           complete_cases = TRUE, 
+           ... ) %>% 
+    mutate( date = as_date( timestamp ) ) %>% 
+    mutate( time = hms::as_hms( timestamp ) )
+
+    return( interval.stock.prices ) 
+}
 yahoo.Stock.Prices <- function( stock.list, ... ){
   stock.prices <- 
     stock.list %>% 
     tq_get( get = "stock.prices", 
                           complete_cases=TRUE,
-                          from="2019-01-01",
                    ... )
   return( stock.prices ) 
 }

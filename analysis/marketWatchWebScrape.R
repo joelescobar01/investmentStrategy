@@ -35,13 +35,35 @@ netIncomeFundamental <- function( symbol ) {
   return( chartAnalysis ) 
 }
 
+grossIncomeFinanceFundamental <- function( symbol ) {
+  chartAnalysis <- 
+    incomeStatementURL(symbol) %>% 
+    createHTMLSession() %>% 
+    marketWatchTableClass() %>% 
+    marketWatchTableClean() %>% 
+    marketWatchFinanceIncomeStatement()
+  return( chartAnalysis ) 
+}
+
+netIncomeFinanceFundamental <- function( symbol ) {
+  chartAnalysis <- 
+    incomeStatementURL(symbol) %>% 
+    createHTMLSession() %>% 
+    marketWatchTableClass() %>% 
+    marketWatchTableClean(n=2) %>% 
+    marketWatchFinanceNetIncomeStatement()
+  return( chartAnalysis ) 
+}
+
+
 incomeStatement <- function( symbol ){
   chart1 <- 
     grossIncomeFundamental( symbol )
   chart2 <- 
     netIncomeFundamental( symbol ) 
   incomeTable <- 
-    full_join( chart1, chart2, by="year" ) 
+    full_join( chart1, chart2, by="year" ) %>% 
+    mutate_if( is.numeric, scales::dollar_format() ) 
   return(incomeTable ) 
 }
 
@@ -177,6 +199,66 @@ marketWatchTableClean <- function( tableStatementList, n=1 ){
     }
   }
   return( mwTbbl ) 
+}
+
+marketWatchFinanceNetIncomeStatement <- function( incomeTbl ){
+  names( incomeTbl ) <-
+    c(  "interest.income", "interest.and.fees.on.loans",
+        "interest.income.on.fed.funds", "interest.income.on.fed.funds", 
+        "interest.income.on.fed.repos", "interest.on.bank.deposits", 
+        "other.interest.or.dividend.income", "interest.income.growth", 
+        "total.interest.expenses", "interest.expense.on.bank.deposits", 
+        "interest.capitalized", "other.borrowed.funds", 
+        "total.interest.expense.growth")
+  return( incomeTbl ) 
+}
+
+marketWatchFinanceNetIncomeStatement <- function( incomeTbl ){
+  names(incomeTbl ) <- 
+    c( "year"
+      ,"net.interest.income"
+      ,"loan.loss.provision"
+      ,"net.interest.income.after.provision"
+      ,"non.interest.income"
+      ,"securities.gain"
+      ,"trading.account.income"
+      ,"trust.income.commissions.fees"
+      ,"commission.fee.income"
+      ,"other.operating.income"
+      ,"non.interest.expense"
+      ,"labor.related.expense"
+      ,"equipment.expense"
+      ,"other.operating.expense"
+      ,"operating.income"
+      ,"non.operating.income.expense"
+      ,"non.operating.interest.income"
+      ,"miscellaneous.non.operating.expense"
+      ,"equityin.affiliates.pretax"
+      ,"unusual.expense"
+      ,"pretax.income"
+      ,"income.taxes"
+      ,"income.tax.current.domestic"
+      ,"income.tax.current.foreign"
+      ,"income.tax.deferred.domestic"
+      ,"income.tax.deferred.foreign"
+      ,"income.tax.credits"
+      ,"equity.in.affiliates"
+      ,"other.after.tax.income.expense"
+      ,"consolidated.net.income"
+      ,"minority.interest.expense"
+      ,"net.income"
+      ,"extraordinaries.discontinued.operations"
+      ,"extra.items.gain.loss.sale.of.assets"
+      ,"cumulative.effect.accounting.chg"
+      ,"discontinued.operations"
+      ,"net.income.after.extraordinaries"
+      ,"preferred.dividends"
+      ,"net.income.availableto.common"
+      ,"EPS.basic"
+      ,"basic.shares.outstanding"
+      ,"EPS.diluted"
+      ,"diluted.shares.outstanding" )
+  return( incomeTbl ) 
 }
 
 marketWatchGrossIncomeTable <- function( incomeTbl ){

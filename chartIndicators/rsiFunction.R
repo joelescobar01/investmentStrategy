@@ -38,69 +38,28 @@ signal.Buy.RSI <- function( stockRSI, symbol="RSI",
 
 chart.RSI <- function( rsiTbbl, plotTitle="RSI Version 1.0",
                       overValueThreshold=70, overSoldThreshold=30, zoomDays=21){
-  g1 <- ggplot( rsiTbbl, aes(x=date)) + 
+  g1 <- 
+    rsiTbbl %>% 
+    drop_na() %>%
+    ggplot( aes(x=date)) + 
         geom_line( aes(y=rsi, colour="rsi"), size=1 ) +
         geom_text(  x=nth(rsiTbbl$date,n=-1), 
                     y=nth(rsiTbbl$rsi,n=-1),
                     label="RSI", aes(colour="rsi"), 
-                    vjust=0, nudge_y=0.5,
+                    position = position_nudge(y = -0.1),
                     size=5) + 
         geom_hline(aes( yintercept = overSoldThreshold, colour="Oversold" ), linetype="dashed") +
-        geom_hline(yintercept = 70 , linetype="dashed" )+
-        scale_x_date( date_breaks = '1 month', 
-                    date_labels = "%b %Y",
-                    minor_breaks = '2 weeks' ) +
+        geom_hline(yintercept = overValueThreshold , linetype="dashed" )+
         labs(title=plotTitle,
-             caption="9 days, EMA",
               y="Momentum Strenght/Weakness", 
               x="Date")+
         scale_colour_manual( 
           guide="none",
           values=c("blue", "red")
-          )+
-        scale_y_continuous(position = "right") +
-        coord_cartesian(xlim=c( 
-                            nth(rsiTbbl$date,n=1)+days(zoomDays), 
-                            nth(rsiTbbl$date,n=-1)) )+ 
-        theme(
-          legend.position = c(0.1, 0.2),
-          legend.title = element_blank(),
-          plot.margin=grid::unit(c(0,0,0,0), "mm"))
-
-    return(g1)
-}
-
-chart.RSI.Group <- function( rsiTbbl, plotTitle="RSI Version 1.0",
-                      overValueThreshold=70, overSoldThreshold=30, zoomDays=21){
-  g1 <- ggplot( rsiTbbl, aes(x=date, colour=group)) + 
-        geom_line( aes(y=rsi, colour="rsi"), size=1 ) +
-        geom_text(  x=nth(rsiTbbl$date,n=-1), 
-                    y=nth(rsiTbbl$rsi,n=-1),
-                    label="RSI", aes(colour="rsi"), 
-                    vjust=0, nudge_y=0.5,
-                    size=5) + 
-        geom_hline(aes( yintercept = overSoldThreshold, colour="Oversold" ), linetype="dashed") +
-        geom_hline(yintercept = 70 , linetype="dashed" )+
-        scale_x_date( date_breaks = '1 month', 
-                    date_labels = "%b %Y",
-                    minor_breaks = '2 weeks' ) +
-        labs(title=plotTitle,
-             caption="9 days, EMA",
-              y="Momentum Strenght/Weakness", 
-              x="Date")+
-        scale_colour_manual( 
-          guide="none",
-          values=c("blue", "red")
-          )+
-        scale_y_continuous(position = "right") +
-        coord_cartesian(xlim=c( 
-                            nth(rsiTbbl$date,n=1)+days(zoomDays), 
-                            nth(rsiTbbl$date,n=-1)) )+ 
-        theme(
-          legend.position = c(0.1, 0.2),
-          legend.title = element_blank(),
-          plot.margin=grid::unit(c(0,0,0,0), "mm")) +
-        facet_wrap( ~ symbol ) 
+          ) +
+        zoom.last_n( rsiTbbl, n=zoomDays ) +
+        scale.date.axis() +
+        max.plot.space() 
 
     return(g1)
 }

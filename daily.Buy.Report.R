@@ -87,7 +87,6 @@ stock.signal.uptrend <- function( stock.indicators.tbbl ){
     print("Uptrend Passed") 
     return( stock.indicators.tbbl ) 
   }
- 
   stock.indicators.tbbl <-
     stock.indicators.tbbl %>% 
     group_by( symbol ) %>% 
@@ -201,8 +200,8 @@ stock.plot.save <- function( stock.plot ){
   
   stock.plot %>% 
     pmap_dfr( function(...){   
-              fileName <- paste( ..1, "_Bar.png", sep="", collapse="" ) 
-              fileName2 <- paste( ..1,"_Indicator.png", sep="", collapse="") 
+              fileName <- paste( directory, ..1, "_Bar.png", sep="", collapse="" ) 
+              fileName2 <- paste( directory, ..1,"_Indicator.png", sep="", collapse="") 
               gp1 <- ggarrange( ..2, ..3, nrow=2, ncol=1 )
               ggsave( fileName , plot=..4, 
                       width=19, height=10, units=c("in") )

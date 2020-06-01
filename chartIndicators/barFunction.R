@@ -1,6 +1,7 @@
 library( tidyquant )
 library( ggplot2 ) 
 library( tidyverse)
+source("visual.lib.R")
 
 findDiscreteSlope <- function( stockTbbl ){
   slopeTbbl <-
@@ -20,9 +21,6 @@ localMin <- function( stockTbbl ){
   return( localMin ) 
 }
 
-
-
-
 chart.BAR <- function( stockTbbl, plotTitle="BAR Graph Version 1.1", zoomDays=21 ){ 
  
   g1 <- 
@@ -30,16 +28,15 @@ chart.BAR <- function( stockTbbl, plotTitle="BAR Graph Version 1.1", zoomDays=21
       ggplot( aes(y=close, x=date) ) + 
       geom_barchart(aes(open = open, high = high, low = low, close = close)) + 
       geom_ma(color = "darkgreen") +
-      scale_x_date( date_breaks = '1 month', 
-                    date_labels = "%b-%d",
-                    minor_breaks = '2 weeks' ) +
       labs( title=plotTitle, 
             y="Closing Price", 
             x="Date") +
-      coord_cartesian(xlim=c( 
-                            nth(stockTbbl$date,n=-1)-days(zoomDays), 
-                            nth(stockTbbl$date,n=-1)) )+ 
-      max.plot.space()  
+        zoom.last_n( stockTbbl, n=zoomDays ) +
+        scale.date.axis() +
+        scale.price.axis() 
+        max.plot.space() 
+
+ 
     return(g1) 
 }
 
@@ -118,62 +115,3 @@ chart.BAR2 <- function( stockTbbl, plotTitle=NA ){
       theme_gray() 
     return(g1) 
 }
-
-
-
-chart.BAR.RSI <- function( stockTbbl, plotTitle=NA ){ 
- 
-  if( !any( 'rsi' %in% names( stockTbbl ) ) )
-    return(NA) 
-
-  trendLines <- 
-    stockTbbl %>% 
-    select(close) %>% 
-    pull() %>% 
-    discreteFirstOrder() %>% 
-    diff()
-  trendLines <- 
-    c(NA, trendLines)
-  
-  if( is.na( plotTitle ) ){
-    symbol <- 
-      stockTbbl %>% first() %>% select(symbol) %>% pull() 
-    plotTitle <- 
-      stockTbbl %>% 
-      filter( row_number() == 1 | row_number() == n() ) %>% 
-      select( date ) %>% 
-      pull() %>% 
-      paste( collapse=' - ' ) 
-    plotTitle <- 
-      paste( symbol, plotTitle, sep=": ") 
-  }
-
-  trend <- 
-    stockTbbl %>% 
-    mutate(min.max = trendLines) %>% 
-    filter( min.max == 2 ) %>% 
-    select( date,close )
-
-  g1 <- 
-    stockTbbl %>% 
-      ggplot( aes(y=close, x=date) ) + 
-      geom_barchart(aes(open = open, high = high, low = low, close = close)) + 
-      geom_ma(color = "darkgreen")  +
-      geom_line( aes( y=rsi) ) + 
-      scale_x_date( date_breaks = '1 month', 
-                    date_labels = "%b",
-                    minor_breaks = '2 weeks' ) +
-      scale_y_continuous(
-        
-        # Features of the first axis
-        name = "Temperature (Celsius °)",
-        
-        # Add a second axis and specify its features
-        sec.axis = sec_axis(~., name="Price ($)")
-      ) + 
-      labs( title=plotTitle, 
-            x="Date") +
-      theme_gray() 
-    return(g1) 
-}
-
