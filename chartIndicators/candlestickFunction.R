@@ -1,22 +1,8 @@
 library(TTR)
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleBearishTrend.R")    
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleBody.R")
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleBullishTrend.R")
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleHammer.R")
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleSizes.R")
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleWick.R")
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleBody.R")
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleDoji.R")
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleKick.R") 
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleStar.R") 
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleThreeGroup.R")
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleGap.R")
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleMedianReversal.R")
-source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleTrend.R")
-source("/home/joel/Documents/stocks/lib/utils.R") 
 library(dplyr)
 library( ggplot2 )
 library(tidyquant)
+source("/home/joel/Documents/stocks/chartIndicators/candlestickpattern/candleSticks.R") 
 #movement patterns 
 
 chart.CandleStick <- function( stockTbbl, plotTitle="Candlestick Version 0.1" ) {  
