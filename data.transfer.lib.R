@@ -4,6 +4,7 @@ library( tidyquant )
 av_api_key("46JTYXHNWNEYZ90I")
 quandl_api_key("xdVQSGYi75oJgntnQbSx") 
 
+
 quandl.fetch <- 
   function( l ){ quandl.Stock.Prices( l ) } 
 
@@ -83,4 +84,13 @@ yahoo.Stock.Prices <- function( stock.list, ... ){
                           complete_cases=TRUE,
                    ... )
   return( stock.prices ) 
+}
+
+fred.Data <- function( data.list, ... ){
+  data.Fred <- 
+    data.list %>% 
+    tq_get( get="economic.data", 
+            complete_cases=TRUE, 
+            ... ) 
+    return( data.Fred ) 
 }

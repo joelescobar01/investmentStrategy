@@ -1,4 +1,4 @@
-library(TTR)
+
 library(tidyverse)
 library(tidyquant)
 library(ggplot2)
@@ -7,18 +7,36 @@ source('visual.lib.R')
 GetMACD <- function(stockTbbl, fast=12, slow=26, signal=9 ){
   stockMACDTbbl <- tryCatch({  
     stockTbbl %>% 
-    tq_mutate(select     = close, 
+    tq_mutate(  select     = close , 
                 mutate_fun = MACD, 
                 nFast      = fast, 
                 nSlow      = slow,
-                nSig       = signal, 
-                maType     = EMA) %>%
+                nSig       = signal) %>%
     mutate(divergence = macd - signal)}, 
   error=function(e) {
       stockTbbl %>% mutate( macd=NA, signal=NA, divergence=NA ) 
+      print( e ) 
   })
   return(stockMACDTbbl) 
 }
+
+GetMACD.Volatility <- function( stockTbbl, fast=12, slow=26, signal=9 ){
+
+  stockMACDTbbl <- 
+    stockTbbl %>% 
+    mutate( close.change = log( close/lag(close) )  ) %>% 
+    mutate( historic.close.change = TTR::runMean( close.change, n=12 ) ) %>% 
+    tq_mutate( select=close.change, mutate_fun=runSD, n=12, col_rename=c("historic.volatility") ) %>% 
+    mutate( alpha.ratio = historic.volatility/( TTR::runSum( historic.volatility) ) ) %>% 
+    drop_na() %>% 
+    mutate( macd = TTR::EMA(close,12, ratio=alpha.ratio) - TTR::EMA(close,26, ratio=alpha.ratio) ) %>% 
+    mutate( signal = EMA( macd,9, ratio=alpha.ratio ) ) %>% 
+    mutate(divergence = macd - signal) %>% 
+    drop_na() 
+
+  return( stockMACDTbbl ) 
+}
+
 
 chart.MACD <- function( macdTbbl,plotTitle="MACD Version 1.2",zoomDays=21 ){
   macdTbbl <- 
@@ -46,7 +64,7 @@ chart.MACD <- function( macdTbbl,plotTitle="MACD Version 1.2",zoomDays=21 ){
               y="", 
               x="Date") + 
         scale_fill_gradient(guide=NULL, name=NULL, low = alpha("red",.5), high = alpha("green",.5))+
-        zoom.last_n( macdTbbl, n=zoomDays ) + 
+        #zoom.last_n( macdTbbl, n=zoomDays ) + 
         scale.date.axis() + 
       max.plot.space()   
     # Note that, the argument legend.position can be also a numeric vector c(x,y). 

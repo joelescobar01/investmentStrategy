@@ -31,7 +31,7 @@ chart.BAR <- function( stockTbbl, plotTitle="BAR Graph Version 1.1", zoomDays=21
       labs( title=plotTitle, 
             y="Closing Price", 
             x="Date") +
-        zoom.last_n( stockTbbl, n=zoomDays ) +
+        #zoom.last_n( stockTbbl, n=zoomDays ) +
         scale.date.axis() +
         scale.price.axis() 
         max.plot.space() 
