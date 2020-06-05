@@ -1,9 +1,37 @@
 library( tidyverse )
 library( tidyquant ) 
+library(timetk) 
+
 
 av_api_key("46JTYXHNWNEYZ90I")
 quandl_api_key("xdVQSGYi75oJgntnQbSx") 
 
+fetch.latest.quote <- function( ticker ){
+  quot <- 
+    getQuote( ticker, 
+             what=yahooQF(c(  "Symbol", "Ask", 
+                              "Bid", "Last Trade (Price Only)", 
+                              "Last Trade Time", "Open", 
+                              "Volume", "Previous Close", 
+                              "52-week Low", "52-week High", 
+                              "Market Capitalization" ))) %>% 
+  tk_tbl(preserve_index = FALSE) 
+
+  colnames(quot) <- 
+    names( quot ) %>% 
+    tolower() %>% 
+    str_replace_all( "\\s{1,}", "." ) 
+
+  quot <-
+    quot %>%
+    mutate( date = as_date( trade.time ) ) %>% 
+    mutate( last.trade.time = hms::as.hms( as_datetime( last.trade.time) ) ) %>% 
+    mutate( market.cap = market.capitalization ) %>% 
+    select( -trade.time, -market.capitalization ) %>% 
+    select( symbol, date, everything() ) 
+
+  return(quot) 
+}
 
 quandl.fetch <- 
   function( l ){ quandl.Stock.Prices( l ) } 

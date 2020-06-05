@@ -3,29 +3,9 @@ library(tidyquant)
 library(TTR) 
 library( ggpubr ) 
 library( broom ) 
+
 marketProxy <-
   c("SPY")
-
-
-
-volatilityMACD <- function(stockTbbl, nFast=12, nSlow=26, nSignal=9 ){
-  stockDf <- 
-    stockTbbl %>%
-    tq_mutate( select=close, mutate_fun=volatility, n=nFast, col_rename="volatility.short") %>% 
-    tq_mutate( select=close, mutate_fun=volatility, n=nSlow, col_rename="volatility.long" ) %>% 
-    mutate( historic.volatility.short = runSum(volatility.short,n=nFast) )  %>% 
-    mutate( alpha.short = volatility.short / historic.volatility.short ) %>% 
-    mutate( historic.volatility.long = runSum(volatility.long,n=nSlow)  ) %>% 
-    mutate( alpha.long = volatility.long/historic.volatility.long ) %>%
-    drop_na() %>%  
-    mutate( macd = TTR::EMA(close,nFast, ratio=alpha.short) - TTR::EMA(close,nSlow, ratio=alpha.long) ) %>% 
-    drop_na() %>% 
-    mutate( signal = EMA( macd, nSignal) ) %>% 
-    mutate(divergence = macd - signal) %>% 
-    select( -volatility.short, -volatility.long, 
-            -historic.volatility.short, -historic.volatility.long, -alpha.long, -alpha.short ) 
-  return( stockDf ) 
-}
 
 marketProxyReturns <- 
   tq_get( marketProxy, get='stock.prices' ) %>% 
@@ -33,8 +13,8 @@ marketProxyReturns <-
                 mutate_fun=periodReturn, 
                 period="monthly", 
                 type="log", 
-                col_rename=c("market.returns" ) ) 
-
+                col_rename=c("market.returns" ) 
+              ) 
 
 assetReturn <- function( ticker ){
   assetReturn <- 
