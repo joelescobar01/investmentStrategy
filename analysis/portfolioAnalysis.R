@@ -3,18 +3,21 @@ library(tidyquant)
 library(TTR) 
 library( ggpubr ) 
 library( broom ) 
-
+source( "data.transfer.lib.R" )
 marketProxy <-
   c("SPY")
 
-marketProxyReturns <- 
-  tq_get( marketProxy, get='stock.prices' ) %>% 
-  tq_transmute( select=adjusted, 
+marketProxyReturns <- function( nPeriod="monthly" ) { 
+  market <- 
+    tq_get( marketProxy, get='stock.prices' ) %>% 
+    tq_transmute( select=close, 
                 mutate_fun=periodReturn, 
-                period="monthly", 
+                period=nPeriod, 
                 type="log", 
                 col_rename=c("market.returns" ) 
               ) 
+  return( market ) 
+}
 
 assetReturn <- function( ticker ){
   assetReturn <- 
@@ -25,7 +28,7 @@ assetReturn <- function( ticker ){
                   period="monthly", 
                   type="log", 
                   col_rename=c("returns") ) %>% 
-    left_join( marketProxyReturns, by='date' ) 
+    left_join( marketProxyReturns(), by='date' ) 
     return( assetReturn ) 
 
 }
@@ -51,10 +54,8 @@ portfolioBeta <- function( portfolio ){
     portfolio %>%
     pmap( ~c(...) ) %>% 
     map( ~ as_tibble(.) %>% 
-          mutate( date=data.date, 
-                  returns=data.returns ) %>% 
           select( symbol, date, returns ) %>% 
-          left_join( marketProxyReturns, by="date") %>% 
+          left_join( marketProxyReturns(), by="date") %>% 
           tq_performance( Ra=returns, 
                           Rb=market.returns,
                           performance_fun= CAPM.beta ) %>% 
@@ -125,3 +126,8 @@ chart.PortfolioAugmentdDollarGrowth <- function( portfolio ) {
                                    "actual growth" = "cornflowerblue")) 
   return(p1) 
 }
+
+
+
+
+

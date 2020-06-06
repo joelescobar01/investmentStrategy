@@ -25,7 +25,7 @@ fetch.latest.quote <- function( ticker ){
   quot <-
     quot %>%
     mutate( date = as_date( trade.time ) ) %>% 
-    mutate( last.trade.time = hms::as.hms( as_datetime( last.trade.time) ) ) %>% 
+    mutate( last.trade.time = hms::as_hms( as_datetime( last.trade.time) ) ) %>% 
     mutate( market.cap = market.capitalization ) %>% 
     select( -trade.time, -market.capitalization ) %>% 
     select( symbol, date, everything() ) 
