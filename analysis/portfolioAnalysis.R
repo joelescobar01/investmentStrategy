@@ -4,8 +4,71 @@ library(TTR)
 library( ggpubr ) 
 library( broom ) 
 source( "data.transfer.lib.R" )
+
+stockSectorsID <- function(){
+  sectors <- 
+    tq_index( "SP500" ) %>% 
+    group_by( sector ) %>% 
+    summarize( symbol ) %>% 
+    select( sector ) %>% 
+    distinct  
+
+  return( sectors ) 
+}
+
+getSectorStocks <- function( sectorName ){
+  
+  sp500 <- 
+    tq_index("SP500") %>% 
+    group_by( sector ) %>% 
+    summarize( symbol ) %>% 
+    filter( sector == sectorName ) %>% 
+    ungroup %>% 
+    select( symbol ) %>% 
+    pull() %>% 
+    tq_get( get='stock.prices', from="2020-01-01" ) 
+  sp500Sector <- 
+    sp500 %>% 
+    group_by( symbol ) %>% 
+    tally() %>% 
+    arrange(n) %>% 
+    filter( n >= 60 ) %>% 
+    select( symbol ) %>% 
+    left_join( sp500, by='symbol' ) %>% 
+    group_by(symbol)
+
+  return( sp500Sector ) 
+}
+
+sectorVolatility <- function( sectors ) {  
+  sectorVolatility <- 
+    sectors %>% 
+    group_by( symbol ) %>% 
+    tq_transmute( select=close, mutate_fun=volatility, n=10, col_rename="volatility" ) %>% 
+    group_by( symbol ) %>% 
+    mutate( date = ymd(date) ) %>% 
+    drop_na() %>% 
+    group_by( monthly = month( date, label=TRUE  ) ) %>% 
+    ggplot( aes(x=date,y=volatility,colour=symbol) ) + 
+    geom_point() + 
+    facet_wrap(vars(monthly), scales="free" ) + 
+    scale_x_date(NULL,breaks = scales::breaks_width("1 weeks"), labels = scales::label_date_short() )
+
+}
+
+sectorWeekVolume <- function( sectors ){
+  sectors %>%
+    group_by( symbol, week=week(date) ) %>% 
+    summarize( volume.sd = sd(volume) ) 
+}
+
 marketProxy <-
   c("SPY")
+
+
+# The Wilshire 5000 is therefor a broad-based market index. A broad-based index is designed to reflect the movement of an entire market.
+broadMarketProxy <- 
+  c("^W5000" ) 
 
 marketProxyReturns <- function( nPeriod="monthly" ) { 
   market <- 
@@ -16,6 +79,14 @@ marketProxyReturns <- function( nPeriod="monthly" ) {
                 type="log", 
                 col_rename=c("market.returns" ) 
               ) 
+  return( market ) 
+}
+
+totalUSMarket <- function( ){
+  market <- 
+    alphavantage.Stock.Prices.Daily(broadMarketProxy) %>% 
+    mutate( symbol = "W5000" ) %>% 
+    rename( date=timestamp ) 
   return( market ) 
 }
 
@@ -67,18 +138,12 @@ portfolioBeta <- function( portfolio ){
  return( portfolioBeta ) 
 }
 
-chart.PortfolioReturns <- function(assetReturn){
-  p1 <-
-    assetReturn %>% 
-    pmap( ~ c(...) ) %>% 
-    map( ~ as_tibble(.) %>% 
-          rename( date = data.date, 
-                  returns = data.returns )  %>% 
-          left_join( marketProxyReturns, by="date" ) %>% 
-          do( p.returns = ggplot(., aes( x=market.returns, y=returns) ) + 
-                          geom_point( ) +
-                          geom_smooth(method = "lm", se = FALSE, color = "green", size = .5) + 
-                          ggtitle(glue::glue("{.$symbol} Scatterplot of Portfolio returns v. market Returns" ) )) )
+chart.PortfolioReturns <- function(portfolio){
+  p1 <- 
+    ggplot(portfolio, aes( x=market.returns, y=returns) ) + 
+                    geom_point( ) +
+                    geom_smooth(method = "lm", se = FALSE, color = "green", size = .5) + 
+                    ggtitle(glue::glue("{.$symbol}Portfolio returns v. market Returns" ) ) 
 
     return(p1)
 }
@@ -130,4 +195,4 @@ chart.PortfolioAugmentdDollarGrowth <- function( portfolio ) {
 
 
 
-
+#tq_mutate( select=close, mutate_fun=periodReturn, period="daily" ) %>% group_by( symbol, week=week(date) ) %>% summarize( volume.sd = sd(volume)/1000000, weekly.return=mean(daily.returns ) ) %>% group_by( symbol, week ) %>% ggplot( aes(y=weekly.return, x=volume.sd, colour=symbol ) ) + geom_point() + geom_text(aes(colour=symbol,label=symbol), vjust = 0, nudge_y = 0.001) + geom_hline( yintercept=0, linetype="dashed", alpha=0.5 ) + facet_wrap( vars(week), scales="free" ) + ggtitle( glue::glue("Industrial Sectors Weekly Summaries" ) ) + labs(x="Weekly Volatility Volume (scaled by 100000)", y="Average Weekly Returns" ) + guides( colour="none")

@@ -1,6 +1,8 @@
 source("data.transfer.lib.R") 
 source("analysis/portfolioAnalysis.R")
 
+
+
 stock1 <- 
   tibble( 
       purchase.date=c( ymd("2020/03/20"), ymd("2020/03/20"), ymd("2020/03/27"), ymd("2020/03/30" ) ),       symbol="WMB", 
@@ -60,6 +62,7 @@ portfolio <-
                 group_by( symbol ) %>% 
                 nest() 
           }) 
+
 portfolioBeta <- 
   portfolio %>% 
   pmap( ~ c(...) )  %>% 

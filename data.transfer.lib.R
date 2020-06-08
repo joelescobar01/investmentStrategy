@@ -100,9 +100,8 @@ alphavantage.Stock.Prices.Daily <- function( stock.list, ... ){
            av_fun = "TIME_SERIES_DAILY", 
            complete_cases = TRUE, 
            ... ) %>% 
-    mutate( date = as_date( timestamp ) ) %>% 
-    mutate( time = hms::as_hms( timestamp ) )
-
+    mutate( symbol="W5000" ) %>% 
+    rename( date=timestamp ) 
     return( interval.stock.prices ) 
 }
 yahoo.Stock.Prices <- function( stock.list, ... ){

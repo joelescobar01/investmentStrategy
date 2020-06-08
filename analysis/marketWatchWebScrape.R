@@ -6,12 +6,19 @@ library(httr)
 source("analysis/sp500.R") 
 source("analysis/utils.R")
 
+
+#ns <- namespace::makeNamespace("marketWatch")
+#assign("test", 7, env = ns)
+#base::namespaceExport(ns, ls(ns))
+
+
 marketWatchWebPageURL <- "https://www.marketwatch.com" 
 marketWatchWebPagePath <- "investing/stock" 
 marketWatchWebPageQuery <-"financials" 
 
 marketWatchWebPageTableClass <- ".crDataTable"
 marketWatchWebPageBalanceSheet <- "balance-sheet" 
+marketWatchWebPageQuarterBalanceSheet <- "balance-sheet/quarter" 
 marketWatchWebPageCashFlowSheet <- "cash-flow"
 
 
@@ -128,6 +135,17 @@ balanceSheetURL <- function( symbol ){
            tolower(symbol), 
            marketWatchWebPageQuery, 
            marketWatchWebPageBalanceSheet, 
+           sep="/")  
+  return(urlPath)
+}
+
+quaterlyBalanceSheetURL <- function( symbol ){
+  urlPath <- 
+    paste( marketWatchWebPageURL, 
+           marketWatchWebPagePath, 
+           tolower(symbol), 
+           marketWatchWebPageQuery, 
+           marketWatchWebPageQuarterBalanceSheet, 
            sep="/")  
   return(urlPath)
 }
@@ -260,241 +278,37 @@ marketWatchBalanceSheetClean <- function( webTable ){
   return( balanceSheetTable ) 
 }
 
+quarterBalanceSheetClean <- function( webTable ){
+  currentTable <- 
+    webTable[[1]] %>%
+    rename_at( vars(contains("USD")), funs(glue::glue("BalanceSheet")) ) %>% 
+    rename_all( funs(str_replace(., "-", "." ) ) ) %>%  
+    select( -ends_with( "trend" ) )
 
-marketWatchTableClean <- function( tableStatementList, n=1 ){
-  tableDF <-
-    tableStatementList[[n]] %>% 
-    select(matches("[0-9]{3,5}")) %>% 
-    t()
-    
-  rowValues <- 
-    tableStatementList[[n]][1] %>%
-    map( function(x) str_replace_all(x, "[\\s{1,}\\W]", "" ) ) 
+  totalTable <- 
+    webTable[[2]] %>%   
+    rename_at( vars("...1"), funs( glue::glue("BalanceSheet") ) ) %>% 
+    rename_all( funs(str_replace(., "-", "." ) ) ) %>%
+    select( -ends_with("trend") )
 
-  rowValues <-
-    rowValues[[1]]
-
-  mwTbbl <- 
-    tableDF %>% 
-    rownames() %>%
-    as_tibble_col( column_name="Year" ) %>% 
-    slice(-1) 
-  
-  for(ii in 1:ncol( tableDF ) ){
-    if( tableDF[-1,ii] %>% str_detect("%") %>% any() ){ #remove the rowname 
-      next() 
-    } else {
-      newCol <- 
-        tableDF[-1,ii] %>%  #-1 is market watch row name
-        replaceBillion() %>% 
-        replaceMillion() %>%
-        str_replace_all( "-", NA_character_ ) %>% 
-        str_replace_all( "(\\()([0-9]*)(\\))", "-\\2" ) %>%   #looses 
-        as.numeric() %>%  
-        as_tibble_col( column_name=rowValues[ii] ) 
-      mwTbbl <- 
-        bind_cols( mwTbbl, newCol )
-    }
-  }
-  return( mwTbbl ) 
-}
-
-marketWatchFinanceNetIncomeStatement <- function( incomeTbl ){
-  names( incomeTbl ) <-
-    c(  "interest.income", "interest.and.fees.on.loans",
-        "interest.income.on.fed.funds", "interest.income.on.fed.funds", 
-        "interest.income.on.fed.repos", "interest.on.bank.deposits", 
-        "other.interest.or.dividend.income", "interest.income.growth", 
-        "total.interest.expenses", "interest.expense.on.bank.deposits", 
-        "interest.capitalized", "other.borrowed.funds", 
-        "total.interest.expense.growth")
-  return( incomeTbl ) 
-}
-
-marketWatchFinanceNetIncomeStatement <- function( incomeTbl ){
-  names(incomeTbl ) <- 
-    c( "year"
-      ,"net.interest.income"
-      ,"loan.loss.provision"
-      ,"net.interest.income.after.provision"
-      ,"non.interest.income"
-      ,"securities.gain"
-      ,"trading.account.income"
-      ,"trust.income.commissions.fees"
-      ,"commission.fee.income"
-      ,"other.operating.income"
-      ,"non.interest.expense"
-      ,"labor.related.expense"
-      ,"equipment.expense"
-      ,"other.operating.expense"
-      ,"operating.income"
-      ,"non.operating.income.expense"
-      ,"non.operating.interest.income"
-      ,"miscellaneous.non.operating.expense"
-      ,"equityin.affiliates.pretax"
-      ,"unusual.expense"
-      ,"pretax.income"
-      ,"income.taxes"
-      ,"income.tax.current.domestic"
-      ,"income.tax.current.foreign"
-      ,"income.tax.deferred.domestic"
-      ,"income.tax.deferred.foreign"
-      ,"income.tax.credits"
-      ,"equity.in.affiliates"
-      ,"other.after.tax.income.expense"
-      ,"consolidated.net.income"
-      ,"minority.interest.expense"
-      ,"net.income"
-      ,"extraordinaries.discontinued.operations"
-      ,"extra.items.gain.loss.sale.of.assets"
-      ,"cumulative.effect.accounting.chg"
-      ,"discontinued.operations"
-      ,"net.income.after.extraordinaries"
-      ,"preferred.dividends"
-      ,"net.income.availableto.common"
-      ,"EPS.basic"
-      ,"basic.shares.outstanding"
-      ,"EPS.diluted"
-      ,"diluted.shares.outstanding" )
-  return( incomeTbl ) 
-}
-
-marketWatchGrossIncomeTable <- function( incomeTbl ){
-  names( incomeTbl ) <- 
-    c("year", "revenue", "COGS", 
-      "COGS.DA", "depreciation.amorization", 
-      "depreciation", "amortization", "gross.income" ) 
-  return(incomeTbl) 
-}
-
-marketWatchNetIncomeTable <- function( incomeTbl ){
-  names( incomeTbl ) <- c("year", 
-                          "SGA.expense", 
-                          "research.development", 
-                          "other.SGA", 
-                          "other.operating.expeses",
-                          "unusual.expenses", 
-                          "EBIT.after.unusual.expenses",
-                          "non.operating.income.expense",
-                          "non.operating.interest.income",
-                          "equity.affiliates.pretax",
-                          "interest.expenses", 
-                          "gross.interest.expenses", 
-                          "interest.capitalized",
-                          "pretax.income", 
-                          "income.tax", 
-                          "income.tax.current.domestic", 
-                          "income.tax.current.foreign", 
-                          "income.tax.deferred.domestic",
-                          "income.tax.deferred.foreign",
-                          "income.tax.credits",
-                          "equity.in.affiliates",
-                          "other.after.tax.income.expenses",
-                          "consolidated.net.income", 
-                          "minority.interest.expenses", 
-                          "net.income", 
-                          "extraordinaries.discontinued.operations",
-                          "extra.items.gain.loss.sales.of.assets",
-                          "cummulative.efecs.accounting.chg",
-                          "dicontinued.operations",
-                          "net.income.after.extraordinaries", 
-                          "preferred.dividends",
-                          "net.income.available.to.common", 
-                          "eps.basic", 
-                          "basic.shares.outstanding",
-                          "eps.diluted", 
-                          "diluted.shares.outstanding", 
-                          "EBITDA" ) 
-
-  return(incomeTbl) 
-}
-
-marketWatchCurrentAssetTable <- function( balanceSheetTbl ){
-  names( balanceSheetTbl ) <- 
-    c( "year", 
-      "cash.short.term.investment", 
-      "cash.only",
-      "short.term.investments", 
-      "total.account.receivable",
-      "account.receivable.net", 
-      "account.receivable.gross", 
-      "bad.debt.doubtful.accounts",
-      "other.receivables", 
-      "accounts.receivable.turnover", 
-      "inventories", 
-      "finished.goods",
-      "working.progress", 
-      "raw.materials", 
-      "progress.payments.other",
-      "other.current.assets", 
-      "misc.current.assets",
-      "total.current.assets" ) 
-  return( balanceSheetTbl ) 
-}
-
-marketWatchTotalAssetTable <- function( balanceSheetTbl ){
-  names( balanceSheetTbl ) <- 
-    c( "year", 
-      "net.property.plant.equip", 
-      "property.plant.gross", 
-      "buildings", 
-      "land.improvements", 
-      "computer.software.equip",
-      "other.property.plant.equip", 
-      "accumulated.depreciation",
-      "total.investement.advances",
-      "other.long.term.investments",
-      "long.term.note.receivable",
-      "intangible.assets",
-      "net.goodwill", 
-      "net.other.intangibles",
-      "other.assets",
-      "tangible.other.assets",
-      "total.assets" ) 
-  return( balanceSheetTbl ) 
-}
-
-marketWatchLiabilityTable <- function( balanceSheetTbl ){
-  names( balanceSheetTbl ) <- 
-  c( "year", 
-      "short.term.debt.current.portion.ltdebt",
-      "short.term.debt",
-      "current.portionof.long.term.debt",
-      "accounts.payable",
-      "income.tax.payable", 
-      "other.current.liabilities",
-      "dividends.payable",
-      "accrued.payroll",
-      "miscellaneous.current.liabilities",
-      "total.current.liabilities",
-      "long.term.debt",
-      "long.term.debt.excl.capitalized.leases",
-      "non.convertible.debt",
-      "convertible.debt",
-      "capitalized.lease.obligations",
-      "provision.for.risks.charges",
-      "deferred.taxes",
-      "deferred.taxes.credit",
-      "deferred.taxes.debit",
-      "other.liabilities",
-      "other.liabilities.excl.deferred.income",
-      "deferred.income", 
-      "total.liabilities",
-      "non.equity.reserves",
-      "preferred.stock.carrying.value",
-      "redeemable.preferred.stock",
-      "non.redeemable.preferred.stock",
-      "common.equity.total",
-      "common.stock.par.carry.value",
-      "retained.earnings",
-      "ESOP.debt.guarantee",
-      "cumulative.translation.adjustment.unrealized.for.exch.gain",
-      "unrealized.gain.loss.marketable.securities",
-      "revalutation.reservers",
-      "treasury.stock",
-      "total.shareholders.equity",
-      "accumulated.minority.interest",
-      "total.equity",
-      "liabilities.shareholders.equity" )
-  return( balanceSheetTbl ) 
+  liabilitiesTable <- 
+    webTable[[3]] %>%   
+    rename_at( vars("...1"), funs( glue::glue("BalanceSheet") ) ) %>% 
+    rename_all( funs(str_replace(., "-", "." ) ) ) %>%
+    select( -ends_with("trend") )
+ 
+  balanceSheetTable <- 
+    bind_rows( currentTable, totalTable ) %>% 
+    bind_rows( liabilitiesTable ) %>% 
+    mutate_all(~ replace(., . == "-" , NA_character_)) %>%
+    mutate_at( vars(-"BalanceSheet"), ~ str_replace_all(., "%", NA_character_ ) ) %>% 
+    map_df( ., ~billionConverter(.)) %>%  
+    map_df( ., ~millionConverter(.)) %>% 
+    drop_na() %>%
+    mutate_at( vars(-"BalanceSheet"), ~ str_replace_all( ., ",", "" ) ) %>% 
+    mutate_at( vars(-"BalanceSheet"), ~str_replace_all( .,"(\\()([0-9]*)(\\))", "-\\2" )) %>% 
+    mutate_at( vars(-"BalanceSheet"), ~str_replace_all( .,"\\(|\\)", "" )) %>% 
+    mutate_at( vars("BalanceSheet"),~ str_replace_all( ., "\\s+|\\.+", "" ) ) %>% 
+    mutate_at( vars(-"BalanceSheet"), ~ as.numeric(.) )
+  return( balanceSheetTable ) 
 }
