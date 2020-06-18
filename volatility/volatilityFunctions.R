@@ -112,6 +112,10 @@ portfolioAugmentd <- function( assetReturn ) {
   return( portfolio ) 
 }
 
+
+
+
+
 chart.PortfolioAugmentd <- function( portfolio ) {
   p1 <-
     portfolio %>% 

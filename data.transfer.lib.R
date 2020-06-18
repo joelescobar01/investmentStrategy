@@ -79,6 +79,16 @@ quandl.Stock.Prices <- function( stock.list, ... ){
   return( stockPrice ) 
 }
 
+quandl.Stock.Prices2 <- function( stock.tibb, ... ){
+  stockPrice <- 
+    stock.tibb %>% 
+    tq_get(get          = "quandl",
+           complete_cases = TRUE, 
+           ... ) %>% 
+    select( - code ) 
+
+  return( stockPrice ) 
+}
 alphavantage.Stock.Prices.Intraday <- function( stock.list, time.interval="30min",... ){
   interval.stock.prices <- 
     stock.list %>% 

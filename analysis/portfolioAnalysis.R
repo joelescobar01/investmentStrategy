@@ -5,6 +5,14 @@ library( ggpubr )
 library( broom ) 
 source( "data.transfer.lib.R" )
 
+marketProxy <-
+  c("SPY")
+
+# The Wilshire 5000 is therefor a broad-based market index. A broad-based index is designed to reflect the movement of an entire market.
+broadMarketProxy <- 
+  c("^W5000" ) 
+
+
 stockSectorsID <- function(){
   sectors <- 
     tq_index( "SP500" ) %>% 
@@ -62,14 +70,6 @@ sectorWeekVolume <- function( sectors ){
     summarize( volume.sd = sd(volume) ) 
 }
 
-marketProxy <-
-  c("SPY")
-
-
-# The Wilshire 5000 is therefor a broad-based market index. A broad-based index is designed to reflect the movement of an entire market.
-broadMarketProxy <- 
-  c("^W5000" ) 
-
 marketProxyReturns <- function( nPeriod="monthly" ) { 
   market <- 
     tq_get( marketProxy, get='stock.prices' ) %>% 
@@ -81,6 +81,53 @@ marketProxyReturns <- function( nPeriod="monthly" ) {
               ) 
   return( market ) 
 }
+
+returnsTrendDiversification <- function( stocks ){
+  # group stocks by symbol 
+  stockReturns <- 
+    stocks %>% 
+    group_by( symbol ) %>% 
+    transmute( date, symbol, daily.returns = TTR::ROC(adjusted) ) %>% 
+    drop_na() 
+
+  covMatrix <- 
+    stockReturns %>% 
+    spread( symbol, daily.returns ) %>% 
+    select( -date ) %>% 
+    drop_na() %>% 
+    cov()
+
+  varia <- 
+    diag( covMatrix ) 
+
+  covTibb <- 
+    as_tibble( covMatrix ) %>% 
+    gather() %>% 
+    rename( symbol=key, variance=value ) 
+  
+  covar <- 
+    unique( covTibb$symbol ) 
+
+  covTibb$co.variance <- 
+    rep(unique( covar), time=length(covar) )
+
+  p1 <-
+    stockReturns %>% 
+    group_by( symbol ) %>% 
+    mutate( growth = cumprod(1 + daily.returns) ) %>% 
+    ggplot( aes( x=date) ) +
+    geom_line( aes(y=growth) ) +
+
+    facet_grid( ~ symbol, scales="free_x" ) + 
+    labs( caption=paste( names(varia), "Variance =", varia, collapse="; ", sep=" " )) +
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 8), labels = scales::dollar) +
+    scale_x_date( breaks = scales::breaks_width("6 months"),
+                labels = scales::label_date_short() ) + 
+    guides( colour="none" ) 
+
+  return( p1 ) 
+}
+  
 
 totalUSMarket <- function( ){
   market <- 
