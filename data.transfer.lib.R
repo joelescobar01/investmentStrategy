@@ -1,7 +1,6 @@
-library( tidyverse )
+library( tidyverse ) 
 library( tidyquant ) 
 library(timetk) 
-
 
 av_api_key("46JTYXHNWNEYZ90I")
 quandl_api_key("xdVQSGYi75oJgntnQbSx") 
@@ -62,8 +61,7 @@ quandl.Stock.List <- function( tickers ){
     tibble(
       code= quandl.codes, 
       symbol = tickers )
-  return( quandl.stock.list ) 
-}
+  return( quandl.stock.list ) }
 
 quandl.Stock.Prices <- function( stock.list, ... ){
   stockPrice <- 
@@ -123,6 +121,14 @@ yahoo.Stock.Prices <- function( stock.list, ... ){
   return( stock.prices ) 
 }
 
+dividend.Payout <- function( stock.list, ... ){
+  dividen <-
+    stock.list %>% 
+    tq_get( get='dividends', complete_cases=TRUE, ... ) 
+
+  return( dividen)
+}
+
 fred.Data <- function( data.list, ... ){
   data.Fred <- 
     data.list %>% 
@@ -131,3 +137,4 @@ fred.Data <- function( data.list, ... ){
             ... ) 
     return( data.Fred ) 
 }
+

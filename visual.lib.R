@@ -21,17 +21,30 @@ max.plot.space <- function(){
   return( max.plot ) 
 }
 
-scale.date.axis <- function(){
+scale.date.axis.small <- function(){
   sc <- 
-  scale_x_date (  labels=scales::label_date_short(), 
-                    date_breaks='1 months',
-                    date_minor_breaks='5 days'  )
+  scale_x_date (  breaks=scales::breaks_width("1 months"), 
+                  labels=scales::label_date_short() )
+  
+  return(sc) 
+}
+
+scale.date.axis.large <- function(){
+  sc <- 
+  scale_x_date (  breaks=scales::breaks_width("6 months"), 
+                  labels=scales::label_date_short() )
   
   return(sc) 
 }
 
 scale.price.axis <- function(){
-
   sc <- 
-      scale_y_continuous(labels = scales::dollar_format() )
+    scale_y_continuous( breaks=scales::breaks_extended(8), labels=scales::label_dollar() )
+  return(sc)
+}
+
+scale.percent.axis <- function(){
+  sc <- 
+    scale_y_continuous( breaks=scales::breaks_extended(16), labels=scales::label_percent() ) 
+  return(sc)
 }

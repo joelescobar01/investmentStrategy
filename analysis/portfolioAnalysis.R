@@ -5,14 +5,6 @@ library( ggpubr )
 library( broom ) 
 source( "data.transfer.lib.R" )
 
-marketProxy <-
-  c("SPY")
-
-# The Wilshire 5000 is therefor a broad-based market index. A broad-based index is designed to reflect the movement of an entire market.
-broadMarketProxy <- 
-  c("^W5000" ) 
-
-
 stockSectorsID <- function(){
   sectors <- 
     tq_index( "SP500" ) %>% 
@@ -22,6 +14,23 @@ stockSectorsID <- function(){
     distinct  
 
   return( sectors ) 
+}
+
+investment.Ratio.Gain.Years <- function(rate, gainRatio=2){
+  years <-
+    log(gainRatio)/log(1 + rate)
+
+  return(years)
+}
+
+
+multiple.Compounding.1year.Returns <- function( startingVal, intRate, compPeriod ){
+  principal <- startingVal
+  rate <- intRate
+  period <- compPeriod
+  ending.value <- principal*(1 + rate/period)^(period)
+  return.avg <- ending.value/principal - 1
+  return( ending.value )
 }
 
 getSectorStocks <- function( sectorName ){
@@ -72,7 +81,7 @@ sectorWeekVolume <- function( sectors ){
 
 marketProxyReturns <- function( nPeriod="monthly" ) { 
   market <- 
-    tq_get( marketProxy, get='stock.prices' ) %>% 
+    tq_get( MARKETRETURNS, get='stock.prices' ) %>% 
     tq_transmute( select=close, 
                 mutate_fun=periodReturn, 
                 period=nPeriod, 

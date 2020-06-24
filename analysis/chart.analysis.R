@@ -274,8 +274,22 @@ supportResistanceLines <- function( stockTbbl, nChunks='1 month', nPoints=3 ){
     return(p)    
 }
 
+chart.Dividend.Payout <- function( stock ){
+  p1 <- 
+    stock %>% 
+    group_by(symbol) %>% 
+    ggplot(aes(x = date, y = value, color = symbol)) + 
+    geom_point() + 
+    geom_text(aes(label = symbol), vjust=0, nudge_y=0.002) +
+    scale_y_continuous(labels = scales::dollar, 
+                       breaks = scales::pretty_breaks(n = 10))  +
+    scale_x_date(breaks = scales::pretty_breaks(n = 10)) +
+    labs(x = "", y = "Dividend per Share", title = "Dividends") +
+    theme(legend.position = "none",
+          plot.title = element_text(hjust = 0.5)) 
 
-
+  return(p1)
+}
 
 
 
