@@ -5,7 +5,7 @@ library(tidyverse)
 library(httr)
 source("analysis/sp500.R") 
 source("analysis/utils.R")
-
+source("analysis/marketWatchWeb/lib.R")
 
 #ns <- namespace::makeNamespace("marketWatch")
 #assign("test", 7, env = ns)
@@ -118,15 +118,15 @@ balanceSheet <- function( symbol ) {
   return( balanceTable ) 
 }
 
-incomeStatementURL <- function( symbol ){
-  urlPath <- 
-    paste( marketWatchWebPageURL, 
-           marketWatchWebPagePath, 
-           tolower(symbol), 
-           marketWatchWebPageQuery, 
-           sep="/")
-  return(urlPath)
-}
+#incomeStatementURL <- function( symbol ){
+#  urlPath <- 
+#    paste( marketWatchWebPageURL, 
+#           marketWatchWebPagePath, 
+#           tolower(symbol), 
+#           marketWatchWebPageQuery, 
+#           sep="/")
+#  return(urlPath)
+#}
 
 balanceSheetURL <- function( symbol ){
   urlPath <- 
@@ -181,6 +181,15 @@ balanceSheet <- function( symbol ){
   return( incomeTable ) 
 }
 
+balanceSheet2 <- function( symbol ){
+  incomeTable <- 
+    balanceSheetURL( symbol ) %>% 
+    createHTMLSession() %>% 
+    marketWatchTableClass2() %>% 
+    marketWatchBalanceSheetClean2()
+
+  return( incomeTable ) 
+}
 
 createHTMLSession <- function( url ){
   session <-
@@ -210,7 +219,6 @@ marketWatchTableClass2 <- function ( htmlSession ) {
   
   return( webTable )
 }
-
 
 marketWatchIncomeStatementClean <- function( webTable ){
   revenueTable <- 
@@ -261,6 +269,78 @@ marketWatchBalanceSheetClean <- function( webTable ){
     select( -starts_with( "..." ), -ends_with("trend") )
 
 
+balanceSheetTable <- 
+  bind_rows( currentTable, totalTable ) %>% 
+  bind_rows( liabilitiesTable ) %>% 
+  mutate_all(~ replace(., . == "-" , NA_character_)) %>%
+  mutate_at( vars(-"BalanceSheet"), ~ str_replace_all(., "%", NA_character_ ) ) %>% 
+  map_df( ., ~billionConverter(.)) %>%  
+  map_df( ., ~millionConverter(.)) %>% 
+  drop_na() %>%
+  mutate_at( vars(-"BalanceSheet"), ~ str_replace_all( ., ",", "" ) ) %>% 
+  mutate_at( vars(-"BalanceSheet"), ~str_replace_all( .,"(\\()([0-9]*)(\\))", "-\\2" )) %>% 
+  mutate_at( vars(-"BalanceSheet"), ~str_replace_all( .,"\\(|\\)", "" )) %>% 
+  mutate_at( vars("BalanceSheet"),~ str_replace_all( ., "\\s+|\\.+", "" ) ) %>% 
+  mutate_at( vars(-"BalanceSheet"), ~ as.numeric(.) )
+  #mutate_if( is.numeric, ~ format(., scientific=F) )
+  return( balanceSheetTable ) 
+}
+
+marketWatchBalanceSheetClean2 <- function( webTable ){
+  currentTable <- 
+    webTable[[1]] %>%
+    rename_at( vars(starts_with("Fiscal")), funs(glue::glue("BalanceSheet")) ) %>% 
+    rename_at( vars(starts_with("20")), funs( paste0("year.",.) ) ) %>%      
+    select( -starts_with("..."), -ends_with( "trend" ) )
+
+  totalTable <- 
+    webTable[[2]] %>%   
+    rename_at( vars("...1"), funs( glue::glue("BalanceSheet") ) ) %>% 
+    rename_at( vars(starts_with("20")), funs( paste0("year.",.) ) ) %>%
+    select( -starts_with( "..." ), -ends_with("trend") )
+
+  liabilitiesTable <- 
+    webTable[[3]] %>%   
+    rename_at( vars("...1"), funs( glue::glue("BalanceSheet") ) ) %>% 
+    rename_at( vars(starts_with("20")), funs( paste0("year.",.) ) ) %>%
+    select( -starts_with( "..." ), -ends_with("trend") )
+
+
+balanceSheetTable <- 
+  bind_rows( currentTable, totalTable ) %>% 
+  bind_rows( liabilitiesTable ) %>% 
+  mutate_all(~ replace(., . == "-" , NA_character_)) %>%
+  mutate_at( vars(-"BalanceSheet"), ~ str_replace_all(., "%", NA_character_ ) ) %>% 
+  map_df( ., ~billionConverter(.)) %>%  
+  map_df( ., ~millionConverter(.)) %>% 
+  mutate_at( vars(-"BalanceSheet"), ~ str_replace_all( ., ",", "" ) ) %>% 
+  mutate_at( vars(-"BalanceSheet"), ~str_replace_all( .,"(\\()([0-9]*)(\\))", "-\\2" )) %>% 
+  mutate_at( vars(-"BalanceSheet"), ~str_replace_all( .,"\\(|\\)", "" )) %>% 
+  mutate_at( vars("BalanceSheet"),~ str_replace_all( ., "\\s+|\\.+", "" ) ) %>% 
+  mutate_at( vars(-"BalanceSheet"), ~ as.numeric(.) )
+  #mutate_if( is.numeric, ~ format(., scientific=F) )
+  return( balanceSheetTable ) 
+}
+
+quarterBalanceSheetClean <- function( webTable ){
+  currentTable <- 
+    webTable[[1]] %>%
+    rename_at( vars(contains("USD")), funs(glue::glue("BalanceSheet")) ) %>% 
+    rename_all( funs(str_replace(., "-", "." ) ) ) %>%  
+    select( -ends_with( "trend" ) )
+
+  totalTable <- 
+    webTable[[2]] %>%   
+    rename_at( vars("...1"), funs( glue::glue("BalanceSheet") ) ) %>% 
+    rename_all( funs(str_replace(., "-", "." ) ) ) %>%
+    select( -ends_with("trend") )
+
+  liabilitiesTable <- 
+    webTable[[3]] %>%   
+    rename_at( vars("...1"), funs( glue::glue("BalanceSheet") ) ) %>% 
+    rename_all( funs(str_replace(., "-", "." ) ) ) %>%
+    select( -ends_with("trend") )
+ 
   balanceSheetTable <- 
     bind_rows( currentTable, totalTable ) %>% 
     bind_rows( liabilitiesTable ) %>% 
@@ -274,11 +354,10 @@ marketWatchBalanceSheetClean <- function( webTable ){
     mutate_at( vars(-"BalanceSheet"), ~str_replace_all( .,"\\(|\\)", "" )) %>% 
     mutate_at( vars("BalanceSheet"),~ str_replace_all( ., "\\s+|\\.+", "" ) ) %>% 
     mutate_at( vars(-"BalanceSheet"), ~ as.numeric(.) )
-    #mutate_if( is.numeric, ~ format(., scientific=F) )
   return( balanceSheetTable ) 
 }
 
-quarterBalanceSheetClean <- function( webTable ){
+quarterBalanceSheetClean2 <- function( webTable ){
   currentTable <- 
     webTable[[1]] %>%
     rename_at( vars(contains("USD")), funs(glue::glue("BalanceSheet")) ) %>% 

@@ -81,6 +81,12 @@ inflation.Rate <- function( fromDate='2010-01-01', toDate=Sys.Date() ){
   return(inflation)
 }
 
+inflation.Rate2 <- function( dateLimit=list( start='2010-01-01', end=Sys.Date() ) ){
+  inflation <- 
+    consumer.Price.Index( floor_date( dateLimit[[1]], unit="month" ), dateLimit[[2]] ) %>% 
+    transmute( symbol="inflation.rate", date, rate = (price-lag(price))/lag(price) ) 
+  return(inflation)
+}
 unit.Labor.Cost <- function( fromDate='2010-01-01', toDate=Sys.Date() ) {
   ulc <- 
     fred.Data( UNIT.LABOR.COST , 

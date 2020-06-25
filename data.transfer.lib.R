@@ -121,7 +121,7 @@ yahoo.Stock.Prices <- function( stock.list, ... ){
   return( stock.prices ) 
 }
 
-dividend.Payout <- function( stock.list, ... ){
+yahoo.Dividend.Payout <- function( stock.list, ... ){
   dividen <-
     stock.list %>% 
     tq_get( get='dividends', complete_cases=TRUE, ... ) 

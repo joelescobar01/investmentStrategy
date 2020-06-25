@@ -1,34 +1,40 @@
-require(quantmod)
-require(PerformanceAnalytics)
-require(tibble)
-require(lubridate)
-require(tidyquant)
-require(dplyr)
-require(tidyverse)
-source("analysis/chart.analysis.R")
+source("data.transfer.lib.R") 
+source("var/economicIndicators.R")
+source("risk/riskFreeAssets.R")
 
-
-# width="600px" border="0" cellspacing="0" cellpadding="0" bgcolor="#336699"
-purchaseQty <- c( 10, 15, 20, 25, 30, 35 )
-probs <- c(.005, 0.0165, .025, .05, .25, .5, .75, .975, .995)
-MAXSALELOSS <- 0.02
-RISKFREERATE <- 0.006
-
-getStockTbbl <- function( stockSymbolChar, ... ){
-  stockTbbl <- tq_get( toupper(stockSymbolChar),
-                        get="stock.prices",
-                        ... )
-  return(stockTbbl) 
+daily.Returns <- function( stock ){
+  stockReturn <-
+    stock %>% 
+    tq_mutate(  adjusted, 
+                mutate_fun=periodReturn, 
+                period='daily' )
+    return( stockReturn ) 
 }
 
-stockDailyContinuouslyCompounded <- function ( stockTbbl ){
-  dailyLogReturnsTbbl <- 
-    stockTbbl %>% 
-    tq_mutate(adjusted, 
-                 mutate_fun = periodReturn, 
-                 period = 'daily', 
-                 type='log' ) 
-  return(dailyLogReturnsTbbl)
+inflation.Returns <- function( stockReturn, inflationRate ){
+  inflationReturn <-
+    (stockReturn+1)/(inflationRate+1) 
+  return( inflationReturn-1 )
+}
+
+inflation.Adjusted.Returns <- function( stock ){
+  inflationTable <-
+    stock %>% 
+    slice( c(1,n()) ) %>% 
+    select( date ) %>% 
+    pull %>% 
+    as.list() %>% 
+    inflation.Rate2() %>% 
+    rename( month = date ) %>% 
+    select( c(-symbol ) ) 
+  inflationReturns <- 
+    stock %>%
+    daily.Returns() %>% 
+    group_by( month = floor_date( date, unit="month") ) %>% 
+    left_join( inflationTable, by="month") %>% 
+    mutate( inflation.adjusted.returns = ((1+daily.returns)/(1+rate) - 1 )) %>% 
+    ungroup()
+  return( inflationReturns ) 
 }
 
 WeeklyPriceAnalysis <- function( stockTbbl ){
@@ -70,6 +76,8 @@ stockDistributionMetric <- function( stockDailyLogReturnTbbl ){
     pull() %>% exp() %>% 
     quantile(probs = probs, na.rm = TRUE)
   return( dist_log_returns ) }
+
+
 stockDistributionMetricTbbl <- function( stockDailyLogReturnTbbl ){
   #probs <- c(.005, .025, .05, .25, .5, .75, .975, .995)
   dist_returns <- 
@@ -102,7 +110,8 @@ SharpeRatio <- function( excessReturnTbbl ){
 }
 
 stockAvgDailyReturnRate <- function( stockDailyLogReturnTbbl ){
-  avgDailyReturn <- stockDailyLogReturnTbbl %>% 
+  avgDailyReturn <- 
+    stockDailyLogReturnTbbl %>% 
     pull(daily.returns) %>% 
     mean(na.rm=TRUE) %>% exp() 
   #On average, the mean daily return is avgDailyReturn-1 more than the 
@@ -176,23 +185,6 @@ PastCumulativeReturns <- function( stockTbbl, nDays=13, principalAmt=1){
   return( returnTbbl ) 
 }
 
-ChartPastCummulativeReturns <- function( returnTbbl ){
-  
-  #roE <- returnTbbl %>% first %>% select( cummalative.return ) %>% pull() 
-  roE <- paste( "Cummulative Return ($USD)" ) 
-  g1 <- 
-    returnTbbl %>% 
-    ggplot() + 
-    geom_line( aes( x=date, y=cummalative.return) ) + 
-    labs( x='Date', y=roE )+ 
-    scale_x_date( breaks='5 days',
-                  minor_breaks='1 days',
-                  date_labels='%b-%d') +
-    scale_y_continuous(position = "right") +
-    theme() 
-
-  return(g1) 
-}
 
 TimePeriodVolatility <- function( symbol ){
   stock <- 
@@ -231,18 +223,6 @@ TimePeriodVolatility2 <- function( stockTbbl ){
 }
 
 
-ChartTimePeriodVolatility <- function( periodVolTbl ){
- p1 <- 
-  periodVolTbl %>% 
-  gather("Time.Period", "Volatility", -year ) %>% 
-     ggplot( aes(x=year, y=Volatility, fill=Time.Period ) ) +
-     geom_bar( position="dodge", stat="identity") + 
-     scale_fill_discrete( labels=c("Annual", "Monthly", "Weekly") ) +
-     theme() 
-  return(p1) 
-}
-
-
 MaxQtyBuy <- function( closePrice, maxAmt ){
   qtyCount <- 0
   while( maxAmt > closePrice ){
@@ -273,6 +253,4 @@ DailyAnnualReturnRate <- function( stockTbbl){
   
   return( dailyReturns ) 
 }
-
-
 ## get the last row of tibble %>% slice(n()) 
