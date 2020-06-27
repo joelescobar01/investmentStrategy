@@ -1,4 +1,24 @@
 library(tidyverse) 
+source("analysis/marketWatchWeb/balanceSheet.R")
+
+net.Current.Asset <- function( symbol ){
+#net current asset value is a company's liquidation value.
+  netAsset <- 
+    balanceSheetYear( symbol ) %>% 
+    replace(., is.na(.), 0.00 ) %>% 
+    filter( BalanceSheet %in% c(  "TotalAssets", "NetGoodwill", 
+                                  "NetOtherIntangibles", "IntangibleAssets", 
+                                  "TotalLiabilities") ) %>% 
+    pivot_longer( cols=starts_with("year"), 
+                 names_to="year", 
+                 names_pattern="(\\-*\\d+\\.*\\d*)", 
+                 values_to="asset") %>% 
+    pivot_wider( names_from="BalanceSheet", values_from="asset" ) %>% 
+    transmute(  year,TotalAssets, IntangibleAssets, 
+                NetGoodwill, NetOtherIntangibles, TotalLiabilities,  
+              net.asset = TotalAssets - (NetOtherIntangibles+NetGoodwill+IntangibleAssets+TotalLiabilities) )
+    return(netAsset ) 
+}
 
 calculateGrossProfit <- function( incomeStatementTbl ){
   incomeStatementTbl <- 

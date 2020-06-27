@@ -66,8 +66,7 @@ gdp.Price.Deflator <- function( fromDate='2010-01-01', toDate=Sys.Date() ) {
               from=fromDate, to=toDate ) 
   return(gdp)
 }
-consumer.Price.Index <- function( fromDate='2010-01-01', toDate=Sys.Date() ) {
-  cpi <- 
+consumer.Price.Index <- function( fromDate='2010-01-01', toDate=Sys.Date() ) { cpi <- 
     fred.Data( CONSUMER.PRICE.INDEX , 
               from=fromDate, to=toDate ) %>%
     mutate( symbol="cpi") 

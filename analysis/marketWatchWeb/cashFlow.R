@@ -78,6 +78,30 @@ yearCashFlowClean <- function( webTable ){
   return( balanceSheetTable ) 
 }
 
+
+yearCashFlowClean2 <- function( webTable ){
+  cashFlowTable <- 
+    webTable %>%
+    map( ~ rename(.x, CashFlow=names(.)[1] ) ) %>% 
+    reduce(bind_rows) %>% 
+    mutate_at( vars("CashFlow"),~ str_replace_all( ., ",|\'|\\&|-|\\.+", "" ) ) %>% 
+    mutate_at( vars("CashFlow"),~ str_replace_all( ., "\\s+", "_" ) ) %>% 
+    #rename_at( vars(starts_with("20")), funs( paste0("year.",.) ) ) %>%      
+    select( -starts_with("..."), -ends_with( "trend" ) ) %>% 
+    pivot_longer( -CashFlow, names_to="year", values_to="values" ) %>% 
+    pivot_wider( names_from=CashFlow, values_from="values" ) %>% 
+    mutate_at( vars(-"year"), ~ billionConverter(.) )  %>% 
+    mutate_at( vars(-"year"), ~ millionConverter(.) ) %>% 
+    mutate_at( vars(-"year"), ~ str_replace_all(., "%", NA_character_ ) ) %>% 
+    mutate_at( vars(-"year"), ~ str_replace_all( ., ",", "" ) ) %>% 
+    mutate_at( vars(-"year"), ~str_replace_all( .,"(\\()([0-9]*)(\\))", "-\\2" )) %>% 
+    mutate_at( vars(-"year"), ~str_replace_all( .,"\\(|\\)", "" )) %>% 
+    mutate_at( vars(-"year"), ~ as.numeric(.) ) %>% 
+    select( ! matches("\\(|\\/|\\)", "") ) 
+    #mutate_if( is.numeric, ~ format(., scientific=F) )
+  return( cashFlowTable ) 
+}
+
 quarterCashFlowClean <- function( webTable ){
   currentTable <- 
     webTable[[1]] %>%

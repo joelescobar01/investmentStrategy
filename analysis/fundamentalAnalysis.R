@@ -3,6 +3,8 @@ source("analysis/financialRatios.R")
 library( ggpubr ) 
 
 
+
+
 parseStockMarketTable <- function( stockMarketTbbl ){
   
   t1 <- 
