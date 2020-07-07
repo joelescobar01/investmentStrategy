@@ -1,6 +1,7 @@
 library( tidyverse ) 
 library( tidyquant ) 
 library(timetk) 
+source("var/variables.R")
 
 av_api_key("46JTYXHNWNEYZ90I")
 quandl_api_key("xdVQSGYi75oJgntnQbSx") 
@@ -137,4 +138,24 @@ fred.Data <- function( data.list, ... ){
             ... ) 
     return( data.Fred ) 
 }
+
+
+get.Financial.Ratios <- function( ticker ) {
+  quoteStock <- 
+    getQuote( ticker , what=quoteNames ) %>% 
+    rownames_to_column(var="symbol") %>% 
+    separate( "Trade Time", into=c("date", "trade.time"), sep="\\s") 
+    colnames( quoteStock ) <- 
+      c( "symbol", "date", "trade.time", "Market.Capitilization", "last.close.price", "PE.Ratio", "Price.Book", 
+        "Book.Value.per.Share", "Average.Daily.Volume", "Shares.Outstanding", "Dividend.per.Share", 
+        "Dividend.Yield", "Earnings.per.Share" )
+  
+  stock <- 
+    quoteStock %>% 
+    as_tibble() %>% 
+    mutate( date = today() ) 
+
+  return(stock) 
+}
+
 

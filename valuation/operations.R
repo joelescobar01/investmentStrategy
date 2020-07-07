@@ -1,0 +1,96 @@
+source("analysis/marketWatchWeb/financialStatementInteface.R")
+
+
+benchmarkWorkingCapital <- function(){
+  benchmark <- 
+    tq_index("SP500") %>% 
+    filter( sector == "Utilities") %>% 
+    select( symbol ) %>% 
+    pull() %>% 
+    map_dfr( ~ workingCapital(.x) ) %>% 
+    select( period, symbol, everything() ) 
+  return( benchmark ) 
+}
+
+benchmarkOPEX <- function(){
+  benchmark <- 
+    tq_index("SP500") %>% 
+    filter( sector == "Utilities") %>% 
+    select( symbol ) %>% 
+    pull() %>% 
+    map_dfr( ~ operatingExpense(.x) ) %>% 
+    select( period, symbol, everything() ) 
+  return( benchmark ) 
+}
+
+benchmarkCAPEX <- function(){
+  benchmark <- 
+    tq_index("SP500") %>% 
+    filter( sector == "Utilities") %>% 
+    select( symbol ) %>% 
+    pull() %>% 
+    map_dfr( ~ capitalExpense(.x) ) %>% 
+    select( period, symbol, everything() ) 
+  return( benchmark ) 
+}
+
+benchmarkCurrentPosition <- function(){
+  benchmark <- 
+    tq_index("SP500") %>% 
+    filter( sector == "Utilities") %>% 
+    select( symbol ) %>% 
+    pull() %>% 
+    map_dfr( ~ currentPosition(.x) ) %>% 
+    select( period, symbol, revenue, everything() ) 
+  return( benchmark ) 
+}
+
+
+workingCapital <- function( ticker ){
+  wc <- 
+    balanceSheetYear(ticker) %>% 
+    select( period, Total_Current_Assets, Total_Current_Liabilities ) %>% 
+    replace(is.na(.), 0 ) %>%     
+    mutate( working.capital = Total_Current_Assets - Total_Current_Liabilities ) %>% 
+    mutate( symbol = ticker ) 
+  return(wc)
+}
+
+operatingExpense <- function( ticker ) {
+  opex <- 
+    incomeStatementYear(ticker) %>% 
+    select( period, COGS_excluding_DA, SGA_Expense, Other_Operating_Expense, Unusual_Expense ) %>% 
+    replace(is.na(.), 0 ) %>% 
+    mutate( opex = COGS_excluding_DA, SGA_Expense, Other_Operating_Expense, Unusual_Expense ) %>% 
+    mutate( symbol = ticker )
+  return(opex) 
+}
+
+capitalExpense <- function( ticker ){
+  capex <- 
+    cashFlowYear(ticker) %>%
+    select( period, Capital_Expenditures ) %>% 
+    mutate( symbol = ticker )
+
+  return(capex)
+}
+
+
+currentPosition <- function( ticker ) {
+  revenue <- 
+    incomeStatementYear(ticker) %>%
+    select( period, 'Sales/Revenue' ) %>% 
+    rename( revenue = 'Sales/Revenue' ) %>%  
+    replace( is.na(.), 0 )
+  
+  cu <- 
+    balanceSheetYear( ticker ) %>% 
+    select( period, Total_Current_Assets, Total_Current_Liabilities ) %>% 
+    mutate( working.capital = Total_Current_Assets - Total_Current_Liabilities ) %>% 
+    mutate( current.ratio = Total_Current_Assets / Total_Current_Liabilities ) %>% 
+    mutate( symbol = ticker ) %>% 
+    left_join( revenue, by='period' ) %>% 
+    mutate( revenue.per.working.capital = revenue / working.capital )  
+
+  return( cu ) 
+}

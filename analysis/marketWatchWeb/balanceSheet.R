@@ -50,7 +50,7 @@ fetchTable <- function ( htmlSession ) {
   return( webTable )
 }
 
-yearBalanceSheetClean <- function( webTable ){
+OLDyearBalanceSheetClean <- function( webTable ){
   currentTable <- 
     webTable[[1]] %>%
     rename_at( vars(starts_with("Fiscal")), funs(glue::glue("BalanceSheet")) ) %>% 
@@ -87,7 +87,7 @@ yearBalanceSheetClean <- function( webTable ){
   return( balanceSheetTable ) 
 }
 
-yearBalanceSheetClean2 <- function( webTable ){
+yearBalanceSheetClean <- function( webTable ){
   balanceSheetTable <- 
     webTable %>%
     map( ~ rename(.x, BalanceSheet=names(.)[1] ) ) %>% 
@@ -104,12 +104,10 @@ yearBalanceSheetClean2 <- function( webTable ){
     mutate_at( vars(-"year"), ~ str_replace_all( ., ",", "" ) ) %>% 
     mutate_at( vars(-"year"), ~str_replace_all( .,"(\\()([0-9]*)(\\))", "-\\2" )) %>% 
     mutate_at( vars(-"year"), ~str_replace_all( .,"\\(|\\)", "" )) %>% 
-    mutate_at( vars(-"year"), ~ as.numeric(.) ) %>% 
-    select( ! matches("\\(|\\/|\\)", "") ) 
+    mutate_at( vars(-"year"), ~ as.numeric(.) )
     #mutate_if( is.numeric, ~ format(., scientific=F) )
   return( balanceSheetTable ) 
 }
-
 
 quarterBalanceSheetClean <- function( webTable ){
   currentTable <- 
@@ -145,32 +143,3 @@ quarterBalanceSheetClean <- function( webTable ){
   return( balanceSheetTable ) 
 }
 
-balanceSheetQuarter <- function( symbol ){
-  incomeTable <- 
-    balanceSheetQuarterURL( symbol ) %>% 
-    createHTMLSession() %>% 
-    fetchTable() %>% 
-    quarterBalanceSheetClean()
-
-  return( incomeTable ) 
-}
-
-balanceSheetYear <- function( symbol ){
-  incomeTable <- 
-    balanceSheetURL( symbol ) %>% 
-    createHTMLSession() %>% 
-    fetchTable() %>% 
-    yearBalanceSheetClean() 
-
-  return( incomeTable ) 
-}
-
-balanceSheetYear2 <- function( symbol ){
-  incomeTable <- 
-    balanceSheetURL( symbol ) %>% 
-    createHTMLSession() %>% 
-    fetchTable() %>% 
-    yearBalanceSheetClean2() 
-
-  return( incomeTable ) 
-}

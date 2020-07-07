@@ -76,14 +76,14 @@ consumer.Price.Index <- function( fromDate='2010-01-01', toDate=Sys.Date() ) { c
 inflation.Rate <- function( fromDate='2010-01-01', toDate=Sys.Date() ){
   inflation <- 
     consumer.Price.Index( fromDate, toDate ) %>% 
-    transmute( symbol="inflation.rate", price = (price-lag(price))/lag(price) ) 
+    mutate( symbol="inflation.rate", rate = (price-lag(price))/lag(price) ) 
   return(inflation)
 }
 
 inflation.Rate2 <- function( dateLimit=list( start='2010-01-01', end=Sys.Date() ) ){
   inflation <- 
     consumer.Price.Index( floor_date( dateLimit[[1]], unit="month" ), dateLimit[[2]] ) %>% 
-    transmute( symbol="inflation.rate", date, rate = (price-lag(price))/lag(price) ) 
+    mutate( symbol="inflation.rate", rate = (price-lag(price))/lag(price) ) 
   return(inflation)
 }
 unit.Labor.Cost <- function( fromDate='2010-01-01', toDate=Sys.Date() ) {

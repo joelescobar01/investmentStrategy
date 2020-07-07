@@ -33,7 +33,13 @@ scale.date.axis.large <- function(){
   sc <- 
   scale_x_date (  breaks=scales::breaks_width("6 months"), 
                   labels=scales::label_date_short() )
-  
+  return(sc) 
+}
+
+scale.date.axis.yearly <- function(){
+  sc <- 
+  scale_x_date (  breaks=scales::breaks_width("1 years"), 
+                  labels=scales::label_date("'%y") )
   return(sc) 
 }
 
