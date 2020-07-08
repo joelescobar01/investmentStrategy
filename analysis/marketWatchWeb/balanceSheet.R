@@ -3,9 +3,9 @@ library(dplyr)
 library( stringr ) 
 library(tidyverse)
 library(httr)
-source("analysis/sp500.R") 
 source("analysis/utils.R")
 source("analysis/marketWatchWeb/lib.R")
+
 
 balanceSheetURL <- function( symbol ){
   urlPath <- 
@@ -29,26 +29,6 @@ balanceSheetQuarterURL <- function( symbol ){
   return(urlPath)
 }
 
-createHTMLSession <- function( url ){
-  session <-
-    html_session( url ) 
-  if( http_status(session)$reason != "OK" ){
-    print("Error connection to url")
-    return(NA)
-  }    
-  return( session ) 
-}
-
-fetchTable <- function ( htmlSession ) {
-  webTable <- 
-    htmlSession %>% 
-    read_html() %>% 
-    html_nodes( "table" ) %>% 
-    html_table(header = TRUE, fill = TRUE, trim=TRUE) %>% 
-    map(., ~ as_tibble(., .name_repair="unique" ) ) 
-  
-  return( webTable )
-}
 
 OLDyearBalanceSheetClean <- function( webTable ){
   currentTable <- 
@@ -98,15 +78,17 @@ yearBalanceSheetClean <- function( webTable ){
     select( -starts_with("..."), -ends_with( "trend" ) ) %>% 
     pivot_longer( -BalanceSheet, names_to="year", values_to="values" ) %>% 
     pivot_wider( names_from=BalanceSheet, values_from="values" ) %>% 
-    mutate_at( vars(-"year"), ~ billionConverter(.) )  %>% 
-    mutate_at( vars(-"year"), ~ millionConverter(.) ) %>% 
-    mutate_at( vars(-"year"), ~ str_replace_all(., "%", NA_character_ ) ) %>% 
-    mutate_at( vars(-"year"), ~ str_replace_all( ., ",", "" ) ) %>% 
-    mutate_at( vars(-"year"), ~str_replace_all( .,"(\\()([0-9]*)(\\))", "-\\2" )) %>% 
-    mutate_at( vars(-"year"), ~str_replace_all( .,"\\(|\\)", "" )) %>% 
-    mutate_at( vars(-"year"), ~ as.numeric(.) )
-    #mutate_if( is.numeric, ~ format(., scientific=F) )
-  return( balanceSheetTable ) 
+    map_dfc( ~ c(...) ) %>% 
+    map_dfr( function(x) { 
+              x %>% 
+                str_replace_all( '-', NA_character_) %>% 
+                str_replace_all(., "%", NA_character_) %>% 
+                str_replace_all( ",", "" ) %>% 
+                str_replace_all( .,"(\\()([0-9]*)(\\))", "-\\2" ) %>% 
+                str_replace_all( .,"\\(|\\)", "" ) 
+                } )
+
+    return( balanceSheetTable ) 
 }
 
 quarterBalanceSheetClean <- function( webTable ){

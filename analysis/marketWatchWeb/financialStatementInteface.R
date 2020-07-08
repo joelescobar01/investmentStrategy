@@ -1,14 +1,20 @@
 source("analysis/marketWatchWeb/balanceSheet.R")
 source("analysis/marketWatchWeb/cashFlow.R")
 source("analysis/marketWatchWeb/incomeStatement.R")
+source('data.transfer.lib.R')
+source('visual.lib.R')
 
 incomeStatementQuarter <- function( symbol ){
   incomeTable <- 
     incomeStatementQuarterURL( symbol ) %>% 
     createHTMLSession() %>% 
-    fetchTable() %>% 
-    quarterIncomeStatementClean()
-
+    fetchTable() %>%
+    combineTables() %>%
+    reshapeTable() %>% 
+    removeDashes() %>% 
+    removePercentage() %>% 
+    convertFinanceFormat() %>% 
+    removeNACol()
   return( incomeTable ) 
 }
 
@@ -17,7 +23,12 @@ incomeStatementYear <- function( symbol ){
     incomeStatementURL( symbol ) %>% 
     createHTMLSession() %>% 
     fetchTable() %>% 
-    cleanTable()  
+    combineTables() %>%
+    reshapeTable() %>% 
+    removeDashes() %>% 
+    removePercentage() %>% 
+    convertFinanceFormat() %>% 
+    removeNACol()  
 
   return( incomeTable ) 
 }
@@ -27,7 +38,13 @@ balanceSheetYear <- function( symbol ){
     balanceSheetURL( symbol ) %>% 
     createHTMLSession() %>% 
     fetchTable() %>% 
-    cleanTable()  
+    combineTables() %>% 
+    reshapeTable() %>% 
+    removeDashes() %>% 
+    removePercentage() %>% 
+    convertFinanceFormat() %>% 
+    removeNACol()  
+
   return( balanceTable ) 
 }
 
@@ -36,8 +53,12 @@ balanceSheetQuarter <- function( symbol ){
     balanceSheetQuarterURL( symbol ) %>% 
     createHTMLSession() %>% 
     fetchTable() %>% 
-    quarterBalanceSheetClean()
-
+    combineTables() %>% 
+    reshapeTable() %>% 
+    removeDashes() %>% 
+    removePercentage() %>% 
+    convertFinanceFormat() %>% 
+    removeNACol()  
   return( incomeTable ) 
 }
 
@@ -46,8 +67,12 @@ cashFlowYear <- function( symbol ){
     cashFlowURL( symbol ) %>% 
     createHTMLSession() %>% 
     fetchTable() %>% 
-    cleanTable() 
-
+    combineTables() %>%
+    reshapeTable() %>% 
+    removeDashes() %>% 
+    removePercentage() %>% 
+    convertFinanceFormat() %>% 
+    removeNACol()  
   return( cashFlow ) 
 }
 
@@ -56,8 +81,12 @@ cashFlowQuarter <- function( symbol ){
     cashFlowQuarterURL( symbol ) %>% 
     createHTMLSession() %>% 
     fetchTable() %>% 
-    quarterCashFlowClean() 
-
+    combineTables() %>%
+    reshapeTable() %>% 
+    removeDashes() %>% 
+    removePercentage() %>% 
+    convertFinanceFormat() %>% 
+    removeNACol()  
   return( cashFlow ) 
 }
 

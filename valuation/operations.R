@@ -79,8 +79,8 @@ capitalExpense <- function( ticker ){
 currentPosition <- function( ticker ) {
   revenue <- 
     incomeStatementYear(ticker) %>%
-    select( period, 'Sales/Revenue' ) %>% 
-    rename( revenue = 'Sales/Revenue' ) %>%  
+    select( period, 'SalesRevenue' ) %>% 
+    rename( revenue = 'SalesRevenue' ) %>%  
     replace( is.na(.), 0 )
   
   cu <- 
