@@ -1,8 +1,7 @@
-source("analysis/marketWatchWeb/balanceSheet.R")
-source("analysis/marketWatchWeb/cashFlow.R")
-source("analysis/marketWatchWeb/incomeStatement.R")
 source('data.transfer.lib.R')
 source('visual.lib.R')
+source("analysis/marketWatchWeb/webTable.R")
+source("analysis/marketWatchWeb/marketWatchHTTP.R")
 
 incomeStatementQuarter <- function( symbol ){
   incomeTable <- 
@@ -14,7 +13,8 @@ incomeStatementQuarter <- function( symbol ){
     removeDashes() %>% 
     removePercentage() %>% 
     convertFinanceFormat() %>% 
-    removeNACol()
+    removeNACol() %>% 
+    rename( revenue = SalesRevenue ) 
   return( incomeTable ) 
 }
 
@@ -28,8 +28,8 @@ incomeStatementYear <- function( symbol ){
     removeDashes() %>% 
     removePercentage() %>% 
     convertFinanceFormat() %>% 
-    removeNACol()  
-
+    removeNACol() %>% 
+    rename( revenue = SalesRevenue )
   return( incomeTable ) 
 }
 

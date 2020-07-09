@@ -1,5 +1,13 @@
 source("analysis/marketWatchWeb/financialStatementInteface.R")
 
+benchmarkProxy <- function(sector_=NA){
+  if( is.na(sector_) )
+    return() 
+  benchmark <- 
+    tq_index("SP500") %>% 
+    filter( sector == sector_ ) 
+  return(benchmark) 
+}
 
 benchmarkWorkingCapital <- function(){
   benchmark <- 
@@ -75,7 +83,6 @@ capitalExpense <- function( ticker ){
   return(capex)
 }
 
-
 currentPosition <- function( ticker ) {
   revenue <- 
     incomeStatementYear(ticker) %>%
@@ -85,7 +92,7 @@ currentPosition <- function( ticker ) {
   
   cu <- 
     balanceSheetYear( ticker ) %>% 
-    select( period, Total_Current_Assets, Total_Current_Liabilities ) %>% 
+    select( period, Total_Current_Assets, Total_Current_Liabilities, Inventories ) %>% 
     mutate( working.capital = Total_Current_Assets - Total_Current_Liabilities ) %>% 
     mutate( current.ratio = Total_Current_Assets / Total_Current_Liabilities ) %>% 
     mutate( symbol = ticker ) %>% 
@@ -94,3 +101,18 @@ currentPosition <- function( ticker ) {
 
   return( cu ) 
 }
+
+inventoryTurnover <- function( ticker ) { 
+  revenue <- 
+    incomeStatementYear(ticker) %>% 
+    select( period, revenue )
+  bs <- 
+    balanceSheetYear(ticker) %>% 
+    select( period, Inventories ) 
+  turnover <- 
+    left_join( revenue, bs ) %>% 
+    mutate( inventory.turnover = (revenue / Inventories) ) 
+  return( turnover ) 
+}
+
+

@@ -1,32 +1,6 @@
-library(rvest)
-library(dplyr)
-library( stringr ) 
 library(tidyverse)
-library(httr)
-
-marketWatchWebPageURL <- "https://www.marketwatch.com" 
-marketWatchWebPagePath <- "investing/stock" 
-marketWatchWebPageQuery <-"financials"
-
-marketWatchWebPageIncomeStatement <- "financials"
-marketWatchWebPageIncomeStatementQuarter <- "financials/income/quarter"
-marketWatchWebPageTableClass <- ".crDataTable"
-marketWatchWebPageBalanceSheet <- "balance-sheet" 
-marketWatchWebPageQuarterBalanceSheet <- "balance-sheet/quarter" 
-marketWatchWebPageCashFlow <- "cash-flow"
-marketWatchWebPageCashFlowQuarter <- "cash-flow/quarter"
 
 options(scipen = 999)   
-
-createHTMLSession <- function( urlPath ){
-  htmlSession <-
-    html_session( urlPath ) 
-  if( http_status(htmlSession)$reason != "OK" ){
-    print("Error connection to url")
-    return(NA)
-  }    
-  return( htmlSession ) 
-}
 
 removeNACol <- function( tbbl ) {
   rColTable <- 
@@ -65,7 +39,6 @@ reshapeTable <- function( dCol ) {
 
   return(rTable ) 
 }
-
 
 removeDashes <- function( rTable ) {
   dTable <- 
