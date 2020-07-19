@@ -85,4 +85,16 @@ assetReturn <- function( ticker ){
 
 }
 
+first.Last.Quote <- function( symbol=c(), fromDate=ymd("2015-01-01") ) {
+  stock <-
+    symbol %>% 
+    tq_get( get='stock.prices', from=fromDate ) %>% 
+    group_by( symbol, year=year(date) ) %>% 
+    filter( date==min(date)|date==max(date) ) %>% 
+    ungroup() %>% 
+    select( symbol, date, open, close, adjusted ) 
+  return( stock ) 
+}
+
+
 #tq_mutate( select=close, mutate_fun=periodReturn, period="daily" ) %>% group_by( symbol, week=week(date) ) %>% summarize( volume.sd = sd(volume)/1000000, weekly.return=mean(daily.returns ) ) %>% group_by( symbol, week ) %>% ggplot( aes(y=weekly.return, x=volume.sd, colour=symbol ) ) + geom_point() + geom_text(aes(colour=symbol,label=symbol), vjust = 0, nudge_y = 0.001) + geom_hline( yintercept=0, linetype="dashed", alpha=0.5 ) + facet_wrap( vars(week), scales="free" ) + ggtitle( glue::glue("Industrial Sectors Weekly Summaries" ) ) + labs(x="Weekly Volatility Volume (scaled by 100000)", y="Average Weekly Returns" ) + guides( colour="none")

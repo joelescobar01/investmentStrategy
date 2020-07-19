@@ -4,6 +4,18 @@ source("visual.lib.R")
 library(lubridate)
 library( ggpubr )
 
+chart.Yield.Curve <- function( yieldData ){
+  p1 <- 
+    yieldData %>% 
+      ggplot( aes(x=maturity.date, y=price ) ) + 
+      geom_point( aes(colour=symbol), size=3 ) + 
+      geom_label( aes(label=name) ) + 
+      geom_line() + 
+      labs( x="Maturity Date", y="Daily Yield Rates" ) + 
+      guides(colour='none') + 
+      scale_x_date( labels = scales::label_date_short("%Y") ) 
+  return(p1)
+}
 
 chart.Market.Health <- function( fromD="2010-01-01" ){
   p1 <-

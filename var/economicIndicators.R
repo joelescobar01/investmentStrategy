@@ -12,6 +12,7 @@ REAL.GDP <-
   "GDPC1"
 CONSUMER.PRICE.INDEX <- 
   "CPIAUCSL"
+PRODUCER.PRICE.INDEX <- "PPIACO"
 GDP.PRICE.DEFLATOR <- 
   "A191RI1Q225SBEA"
 FREIGHT.TRANSPORT.SERVICE <- 
@@ -66,6 +67,7 @@ gdp.Price.Deflator <- function( fromDate='2010-01-01', toDate=Sys.Date() ) {
               from=fromDate, to=toDate ) 
   return(gdp)
 }
+
 consumer.Price.Index <- function( fromDate='2010-01-01', toDate=Sys.Date() ) { cpi <- 
     fred.Data( CONSUMER.PRICE.INDEX , 
               from=fromDate, to=toDate ) %>%
@@ -73,10 +75,26 @@ consumer.Price.Index <- function( fromDate='2010-01-01', toDate=Sys.Date() ) { c
   return( cpi )
 }
 
-inflation.Rate <- function( fromDate='2010-01-01', toDate=Sys.Date() ){
+producer.Price.Index <- function( fromDate='2010-01-01', toDate=Sys.Date() ) { 
+  ppi <- 
+    fred.Data( PRODUCER.PRICE.INDEX , from=fromDate, to=toDate ) %>% 
+    mutate( symbol="ppi") 
+  return( ppi )
+}
+
+inflation.cpi <- function( fromDate='2010-01-01', toDate=Sys.Date() ){
   inflation <- 
     consumer.Price.Index( fromDate, toDate ) %>% 
     mutate( symbol="inflation.rate", rate = (price-lag(price))/lag(price) ) 
+  return(inflation)
+}
+
+inflation.Rates <- function( fromDate='2010-01-01', toDate=Sys.Date() ){
+  inflation <- 
+    consumer.Price.Index() %>% 
+    bind_rows( producer.Price.Index() ) %>% 
+    group_by(symbol) %>% 
+    mutate( rate = (price-lag(price))/lag(price) )
   return(inflation)
 }
 

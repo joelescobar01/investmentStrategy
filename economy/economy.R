@@ -1,4 +1,5 @@
 source("data.transfer.lib.R") 
+source("var/economicIndicators.R")
 library( broom )
 library(lubridate)
 
@@ -7,13 +8,24 @@ library(lubridate)
 
 PASSENGER.CAR.REGISTRATIONS <- 
   "USASLRTCR03MLSAM" 
+GOV.SECURITIES <- 
+    c("4WEEK"="DTB4WK", 
+      "3MONTH"="DTB3", 
+      "6MONTH"="DTB6", 
+      "1YEAR"="DGS1" , 
+      "2YEAR"="DGS2", 
+      "5YEAR"="DGS5", 
+      "7YEAR"="DGS7", 
+      "10YEAR"="DGS10",
+      "20YEAR"="DGS20", 
+      "30YEAR"="DGS30" )
 
 economyIndicators <- function(fromDate='2010-01-01', toDate=Sys.Date() ){
   indicators <- 
     fred.Data( c("UNRATE", "FEDFUNDS", 
                  "CPIAUCSL", "GDPC1" , 
                  "DFII5", "DGS5", 
-                 "USALOCOCINOSTSAM" ), from=fromDate, to=toDate ) 
+                 "USALOCOCINOSTSAM", "PPIACO" ), from=fromDate, to=toDate ) 
   pmi <- 
     tibble( code="ISM/MAN_PMI", symbol="MAN_PMI" ) %>% 
     quandl.Stock.Prices2(from=fromDate, to=toDate) %>% 
@@ -28,15 +40,64 @@ economyIndicators <- function(fromDate='2010-01-01', toDate=Sys.Date() ){
   return( indicators ) 
 }
 
+yieldCurve.Data <- function( fromDate='2010-01-01', toDate=Sys.Date() ){
+  
+  securities <- 
+    fred.Data( unname(GOV.SECURITIES), from=fromDate, to=toDate ) %>%
+    group_by(symbol) %>% 
+    filter( date == max(date) ) %>% 
+    add_column( weeks.to.maturity = c( 4, 13, 26, 52, 104, 260, 365, 521, 1042, 1564 ) )  %>% 
+    add_column( name=names(GOV.SECURITIES) ) %>%  
+    transmute( symbol, name, price, maturity.date = date + weeks( weeks.to.maturity ) )
+  return( securities ) 
+}
+
 inflation <- function( indicators ){
   inflation <-
     indicators %>% 
     #filter( symbol == "CPIAUCSL" ) %>% 
     mutate( rate = ( price - lag(price))/lag(price)*100 ) %>% 
     mutate( symbol = "inflation.ROC" ) %>% 
-    select( symbol, date, rate ) %>%
-    mutate( caption="Monthly Change In CPI divided by previous month, M(t)-M(t-1)/M(t-1)" ) 
+    select( symbol, date, rate )
   return( inflation ) 
+}
+
+wholesale.Inflation <- function( indicators ){
+  inflation <-
+    indicators %>% 
+    #filter( symbol == "CPIAUCSL" ) %>% 
+    mutate( rate = ( price - lag(price))/lag(price)*100 ) %>% 
+    mutate( symbol = "wholesale.inflation" ) %>% 
+    select( symbol, date, rate )
+  return( inflation ) 
+}
+
+annualInflation <- function( indicators=inflation.Rates(fromDate), fromDate=ymd("2015-01-01") ){
+  annualInflation <- 
+    indicators %>% 
+    drop_na() %>% 
+    ungroup() %>% 
+    group_by( year=year(date) ) %>% 
+    filter( date==min(date)|date==max(date) ) %>% 
+    select( -rate ) %>% 
+    pivot_wider(names_from=symbol, values_from=price) %>% 
+    summarise_at( c("cpi", "ppi"), diff ) %>% 
+    rename( cpi.inflation=cpi, ppi.inflation=ppi )
+
+  return( annualInflation ) 
+}
+
+purchasingPower <- function( indicators=inflation.Rates(fromDate), fromDate=ymd("2015-01-01") ){
+  purchasePower <- 
+    indicators %>% 
+    group_by( year=year(date) ) %>% 
+    filter( date==min(date)|date==max(date) ) %>% 
+    select( -rate ) %>% 
+    pivot_wider(names_from=symbol, values_from=price) %>% 
+    summarise_at( c("cpi", "ppi"), diff ) %>% 
+    rename( cpi.inflation=cpi, ppi.inflation=ppi )
+
+  return( purchasePower) 
 }
 
 oecdIndicator <- function( indicators ){
