@@ -1,93 +1,90 @@
 source('data.transfer.lib.R')
+library(rvest)
+library(httr)
 source('visual.lib.R')
 source("analysis/marketWatchWeb/webTable.R")
 source("analysis/marketWatchWeb/marketWatchHTTP.R")
 
-incomeStatementQuarter <- function( symbol ){
-  incomeTable <- 
-    incomeStatementQuarterURL( symbol ) %>% 
+financialStatement <- function( mwURL ){
+  docu <- 
+    mwURL %>% 
     createHTMLSession() %>% 
-    fetchTable() %>%
-    combineTables() %>%
+    fetchTable() %>% 
+    combineTables() %>% 
     reshapeTable() %>% 
     removeDashes() %>% 
     removePercentage() %>% 
     convertFinanceFormat() %>% 
-    removeNACol() %>% 
-    rename( revenue = SalesRevenue ) 
-  return( incomeTable ) 
+    cleanTable()
+  return(docu)
 }
 
 incomeStatementYear <- function( symbol ){
-  incomeTable <- 
-    incomeStatementURL( symbol ) %>% 
-    createHTMLSession() %>% 
-    fetchTable() %>% 
-    combineTables() %>%
-    reshapeTable() %>% 
-    removeDashes() %>% 
-    removePercentage() %>% 
-    convertFinanceFormat() %>% 
-    removeNACol() %>% 
-    rename( revenue = SalesRevenue )
-  return( incomeTable ) 
+  statement <- 
+    symbol %>% 
+    incomeStatementURL() %>% 
+    financialStatement() 
+  return( statement ) 
+}
+
+incomeStatementQuarter <- function( symbol ){
+  statement <- 
+    symbol %>% 
+    incomeStatementQuarterURL() %>% 
+    financialStatement() 
+  return( statement ) 
 }
 
 balanceSheetYear <- function( symbol ){
-  balanceTable <- 
-    balanceSheetURL( symbol ) %>% 
-    createHTMLSession() %>% 
-    fetchTable() %>% 
-    combineTables() %>% 
-    reshapeTable() %>% 
-    removeDashes() %>% 
-    removePercentage() %>% 
-    convertFinanceFormat() %>% 
-    removeNACol()  
-
-  return( balanceTable ) 
+  statement <- 
+    symbol %>% 
+    balanceSheetURL() %>% 
+    financialStatement() 
+  return( statement ) 
 }
 
 balanceSheetQuarter <- function( symbol ){
-  incomeTable <- 
-    balanceSheetQuarterURL( symbol ) %>% 
-    createHTMLSession() %>% 
-    fetchTable() %>% 
-    combineTables() %>% 
-    reshapeTable() %>% 
-    removeDashes() %>% 
-    removePercentage() %>% 
-    convertFinanceFormat() %>% 
-    removeNACol()  
-  return( incomeTable ) 
+  statement <- 
+    symbol %>% 
+    balanceSheetQuarterURL() %>% 
+    financialStatement() 
+  return( statement ) 
 }
 
 cashFlowYear <- function( symbol ){
-  cashFlow <- 
-    cashFlowURL( symbol ) %>% 
-    createHTMLSession() %>% 
-    fetchTable() %>% 
-    combineTables() %>%
-    reshapeTable() %>% 
-    removeDashes() %>% 
-    removePercentage() %>% 
-    convertFinanceFormat() %>% 
-    removeNACol()  
-  return( cashFlow ) 
+  statement <- 
+    symbol %>% 
+    cashFlowURL() %>% 
+    financialStatement() 
+  return( statement ) 
 }
 
 cashFlowQuarter <- function( symbol ){
-  cashFlow <- 
-    cashFlowQuarterURL( symbol ) %>% 
-    createHTMLSession() %>% 
-    fetchTable() %>% 
-    combineTables() %>%
-    reshapeTable() %>% 
-    removeDashes() %>% 
-    removePercentage() %>% 
-    convertFinanceFormat() %>% 
-    removeNACol()  
-  return( cashFlow ) 
+  statement <- 
+    symbol %>% 
+    cashFlowQuarterURL() %>% 
+    financialStatement() 
+  return( statement ) 
+}
+
+companyFinancialDocumentsYearly <- function( company ){
+  incomeS <- 
+    company %>% 
+    incomeStatementYear()
+  balanceS <- 
+    company %>% 
+    balanceSheetYear()   
+  cashFlowS <- 
+    company %>% 
+    cashFlowYear()
+
+ document <- 
+   list(  company = company, 
+          income.statement = incomeS,
+          balance.sheet = balanceS, 
+          cash.flow = cashFlowS ) 
+
+  return( document )
 }
 
 

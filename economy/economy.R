@@ -8,17 +8,19 @@ library(lubridate)
 
 PASSENGER.CAR.REGISTRATIONS <- 
   "USASLRTCR03MLSAM" 
+
 GOV.SECURITIES <- 
     c("4WEEK"="DTB4WK", 
       "3MONTH"="DTB3", 
       "6MONTH"="DTB6", 
       "1YEAR"="DGS1" , 
       "2YEAR"="DGS2", 
-      "5YEAR"="DGS5", 
+      "5YEAR"="DGS5",
+      "5YEARTIPS"="DFII5",
       "7YEAR"="DGS7", 
       "10YEAR"="DGS10",
       "20YEAR"="DGS20", 
-      "30YEAR"="DGS30" )
+      "30YEAR"="DGS30")
 
 economyIndicators <- function(fromDate='2010-01-01', toDate=Sys.Date() ){
   indicators <- 
@@ -59,6 +61,19 @@ inflation <- function( indicators ){
     mutate( rate = ( price - lag(price))/lag(price)*100 ) %>% 
     mutate( symbol = "inflation.ROC" ) %>% 
     select( symbol, date, rate )
+  return( inflation ) 
+}
+
+inflation2 <- function(){
+  inflation <- 
+    GOV.SECURITIES[c("5YEAR", "5YEARTIPS")] %>% 
+    unname %>% 
+    fred.Data() %>% 
+    group_by(symbol) %>% 
+    pivot_wider( names_from=symbol, values_from=price ) %>% 
+    rename( nominal=DGS5, real=DFII5 ) %>% 
+    mutate( inflation.rate = ( 1 + (nominal*0.01))/(1 + (real*0.01) ) -1 )  
+
   return( inflation ) 
 }
 

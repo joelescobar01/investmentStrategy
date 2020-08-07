@@ -1,4 +1,5 @@
 source("data.transfer.lib.R")
+source("var/variables.R")
 
 UNIT.LABOR.COST <- 
   "ULCMFG"

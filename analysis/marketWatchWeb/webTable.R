@@ -9,22 +9,32 @@ removeNACol <- function( tbbl ) {
   return(rColTable)
 }
 
+#fetchTable <- function ( htmlSession ) {
+#  webTable <- 
+#    htmlSession %>% 
+#    read_html() %>% 
+#    html_nodes( "table" ) %>% 
+#    html_table(header = TRUE, fill = TRUE, trim=TRUE) %>% 
+#    map(., ~ as_tibble(., .name_repair="unique" ) ) %>%
+#    map( ., ~ select_if( .x, ~sum(!is.na(.)) > 0 ) ) 
+#  return( webTable )
+#}
+
 fetchTable <- function ( htmlSession ) {
   webTable <- 
     htmlSession %>% 
     read_html() %>% 
     html_nodes( "table" ) %>% 
     html_table(header = TRUE, fill = TRUE, trim=TRUE) %>% 
-    map(., ~ as_tibble(., .name_repair="unique" ) ) %>%
-    map( ., ~ select_if( .x, ~sum(!is.na(.)) > 0 ) ) 
+    map(., ~ as_tibble(., .name_repair="unique" ) ) 
   return( webTable )
 }
-
 combineTables <- function( webTable ){
   dCol <- 
     webTable %>% 
     map( ~ rename(.x, defaultName=names(.)[1] ) ) %>% 
-    reduce(bind_rows)
+    reduce(bind_rows) %>% 
+    select_if( ~sum(!is.na(.)) > 0 ) 
   return(dCol) 
 }
 
@@ -32,18 +42,17 @@ reshapeTable <- function( dCol ) {
   rTable <- 
     dCol %>% 
     mutate_at( vars("defaultName"), ~ str_replace_all(., "[:punct:]", "" ) %>% 
-                                      str_replace_all( "[:blank:]+", "_" ) 
+                                      str_replace_all( "[:blank:]+", "." )
               ) %>% 
     pivot_longer( -defaultName, names_to="period", values_to="values" ) %>% 
-    pivot_wider( names_from=defaultName, values_from="values" ) 
-
+    pivot_wider( names_from=defaultName, values_from="values", values_fn=list ) 
   return(rTable ) 
 }
 
-removeDashes <- function( rTable ) {
+removeDashes <- function( rTable, cName="period" ) {
   dTable <- 
     rTable %>%
-    mutate_at( vars(-"period"), ~ str_replace_all( ., "-", NA_character_ ) ) 
+    mutate_at( vars(-cName), ~ str_replace_all( ., "-", NA_character_ ) ) 
   return(dTable ) 
 }
 
@@ -57,32 +66,18 @@ removePercentage <- function( dTable ) {
 convertFinanceFormat <- function( pTable ) {
   fFormat <- 
     pTable %>% 
-    mutate_at( vars(-"period"), ~ str_replace_all( .,"(\\()(.*)(\\))", "-\\2" ) %>% 
-                                  numerateChar()) 
+    mutate_at( vars(-"period"), ~ str_replace_all( .,"(\\()(.*)(\\))", "-\\2" ) ) %>% 
+    mutate_at( vars(-"period"), ~ numerateChar(.)) 
   return(fFormat )
 }
 
-cleanTable <- function( webTable ){
-  mwTable <- 
-    webTable %>%
-    map( ~ rename(.x, defaultName=names(.)[1] ) ) %>% 
-    reduce(bind_rows) %>% 
-    mutate_at( vars("defaultName"),~ str_replace_all( ., ",|\'|\\&|-|\\.+", "" ) ) %>% 
-    mutate_at( vars("defaultName"),~ str_replace_all( ., "\\s+", "_" ) ) %>% 
-    #rename_at( vars(starts_with("20")), funs( paste0("period.",.) ) ) %>%      
-    select( -starts_with("..."), -ends_with( "trend" ) ) %>% 
-    pivot_longer( -defaultName, names_to="period", values_to="values" ) %>% 
-    pivot_wider( names_from=defaultName, values_from="values" ) %>% 
-    mutate_at( vars(-"period"), ~ billionConverter(.) )  %>% 
-    mutate_at( vars(-"period"), ~ millionConverter(.) ) %>% 
-    mutate_at( vars(-"period"), ~ str_replace_all(., "%", NA_character_ ) ) %>% 
-    mutate_at( vars(-"period"), ~ str_replace_all( ., ",", "" ) ) %>% 
-    mutate_at( vars(-"period"), ~str_replace_all( .,"(\\()([0-9]*)(\\))", "-\\2" )) %>% 
-    mutate_at( vars(-"period"), ~str_replace_all( .,"\\(|\\)", "" )) %>% 
-    mutate_at( vars(-"period"), ~ as.numeric(.) )
+cleanTable <- function( fFormat ){
+  eCol <- 
+    fFormat %>% 
+    mutate_at( vars(-"period"), replace_na, 0 ) %>% 
+    rename_all( tolower )
 
-    #mutate_if( is.numeric, ~ format(., scientific=F) )
-  return( mwTable ) 
+  return(eCol)
 }
 
 

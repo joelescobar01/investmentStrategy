@@ -1,5 +1,3 @@
-
-
 marketWatchWebPageURL <- "https://www.marketwatch.com" 
 marketWatchWebPagePath <- "investing/stock" 
 marketWatchWebPageQuery <-"financials"

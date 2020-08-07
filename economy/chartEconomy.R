@@ -258,6 +258,20 @@ chart.Unemployment.Yearly <- function(){
   return(p1) 
 }
 
+chart.Inflation <- function(inflation){
+  p1 <-
+    inflation %>% 
+    group_by( year = year( date ) ) %>% 
+    ggplot( aes(x=date) ) + 
+    geom_line( aes(y=inflation.rate) ) +
+    guides(colour="none") + 
+    scale_x_date( breaks=scales::breaks_width("4 months"), labels=scales::label_date_short() ) + 
+    scale_y_continuous( breaks=scales::breaks_extended(8), labels=scales::label_percent() ) +
+    labs( y="Percent", x="Dates", title="Inflation Rate" ) 
+  return(p1) 
+}
+
+
 chart.GDP.Price.Deflator.Yearly <- function(){
   p1 <- 
     gdp.Price.Deflator() %>% 
