@@ -1,5 +1,5 @@
 source("var/economicIndicators.R") 
-source("var/benchmarks.R")
+source("economy/economy.R")
 source("visual.lib.R")
 library(lubridate)
 library( ggpubr )
@@ -27,17 +27,6 @@ chart.Market.Health <- function( fromD="2010-01-01" ){
     labs( y="Close Price", x="Dates", title="W5000 Index" )
   return(p1) 
 }
-
-market.Monthly.Return <- function( market=market.Return(), period="monthly" ){
-  monthlyReturns <-
-    market %>% 
-    group_by(symbol) %>% 
-    tq_transmute( select=adjusted, 
-                  mutate_fun=periodReturn, 
-                  period="monthly") 
-  return( monthlyReturns ) 
-}
-# to log type (compound continous ) log( 1 + return ) 
 
 chart.Market.Return.Yearly <- function(){
   p1 <- market.Return() %>% 
@@ -164,11 +153,25 @@ chart.Real.GDP <- function(fromD="2010-01-01"){
     geom_line( aes(y=price) ) + 
     scale_x_date( breaks=scales::breaks_width("6 months"), 
                   labels=scales::label_date_short() ) + 
-    scale_y_continuous( breaks=scales::breaks_extended(8) ) +
+    scale_y_continuous( breaks=scales::breaks_extended(8),
+                       labels=scales::label_dollar() ) +
     labs( y="Real GDP, 2012 = 100", x="", title="Real GDP") 
   return(p1) 
 }
 
+chart.Real.GDP.Delta <- function(fromD="2010-01-01"){
+  p1 <- 
+    real.GDP(fromDate=fromD) %>%
+    mutate( delta.price = price - lag(price) ) %>% 
+    ggplot( aes(x=date) ) + 
+    geom_line( aes(y=delta.price) ) + 
+    scale_x_date( breaks=scales::breaks_width("6 months"), 
+                  labels=scales::label_date_short() ) + 
+    scale_y_continuous( breaks=scales::breaks_extended(8),
+                       labels=scales::label_dollar() ) +
+    labs( y="Real GDP, 2012 = 100", x="", title="Real GDP") 
+  return(p1) 
+}
 chart.GDP.Price.Deflator <- function( fromD="2010-01-01"){
   p1 <- 
     gdp.Price.Deflator(fromDate=fromD) %>% 
@@ -183,6 +186,8 @@ chart.GDP.Price.Deflator <- function( fromD="2010-01-01"){
           caption=" A measure of the level of prices of all new, domestically produced, final goods and services in an economy.",  y="Percent Change from Preceding Month", x="Dates", title="GDP Price Deflator" ) 
   return(p1) 
 }
+
+
 
 chart.Inv.To.Sale <- function(fromD="2010-01-01"){ 
   p1 <-
@@ -258,36 +263,93 @@ chart.Unemployment.Yearly <- function(){
   return(p1) 
 }
 
-chart.Inflation <- function(inflation){
+chart.Generic <- function(dataTable, cTitle="Generic"){
+  p1 <- 
+    dataTable %>% 
+    ggplot( aes(x=date) ) + 
+    geom_line( aes(y=price) ) + 
+    scale_x_date( breaks=scales::breaks_width("6 months"), labels=scales::label_date_short() ) + 
+    scale_y_continuous( breaks=scales::breaks_extended(8) ) +
+    labs( x="Dates", title=cTitle ) 
+  return(p1) 
+}
+
+
+chart.Generic.Percent <- function(dataTable, cTitle="Generic"){
+  p1 <- 
+    dataTable %>% 
+    ggplot( aes(x=date) ) + 
+    geom_line( aes(y=percent) ) + 
+    scale_x_date( breaks=scales::breaks_width("6 months"), labels=scales::label_date_short() ) + 
+    scale_y_continuous( breaks=scales::breaks_extended(8), labels=scales::label_percent() ) +
+    labs( y="Percent", x="Dates", title=cTitle ) 
+  return(p1) 
+}
+
+chart.Generic.Price <- function(dataTable, cTitle="Generic"){
+  p1 <- 
+    dataTable %>% 
+    ggplot( aes(x=date) ) + 
+    geom_line( aes(y=price) ) + 
+    scale_x_date( breaks=scales::breaks_width("6 months"), labels=scales::label_date_short() ) + 
+    scale_y_continuous( breaks=scales::breaks_extended(8), labels=scales::label_dollar()  ) +
+    labs( y="Price USD", x="Dates", title=cTitle ) 
+  return(p1) 
+}
+chart.Inflation.Rate <- function(inflation=market.inflation()){
   p1 <-
     inflation %>% 
-    group_by( year = year( date ) ) %>% 
     ggplot( aes(x=date) ) + 
-    geom_line( aes(y=inflation.rate) ) +
-    guides(colour="none") + 
-    scale_x_date( breaks=scales::breaks_width("4 months"), labels=scales::label_date_short() ) + 
-    scale_y_continuous( breaks=scales::breaks_extended(8), labels=scales::label_percent() ) +
-    labs( y="Percent", x="Dates", title="Inflation Rate" ) 
-  return(p1) 
-}
-
-
-chart.GDP.Price.Deflator.Yearly <- function(){
-  p1 <- 
-    gdp.Price.Deflator() %>% 
-    group_by( year = year( date ), quarter=quarter(date)) %>% 
-    ggplot( aes(x=date) ) + 
-    geom_col( aes(y=price, fill=quarter) ) + 
-    facet_wrap( year ~., scale="free" ) + 
-    guides(colour="none") + 
-    scale_x_date( breaks=scales::breaks_width("1 months"), 
+    geom_line( aes(y=cpi.inflation), colour="red" ) +
+    geom_line( aes(y=ppi.inflation), colour="blue" ) + 
+    scale_x_date( breaks=scales::breaks_width("6 months"), 
                   labels=scales::label_date_short() ) + 
-    scale_y_discrete( breaks=scales::breaks_extended(8) ) +
-    labs( subtitle="GDP Price Deflation = Nominal GDP / Real GDP", 
-          caption=" A measure of the level of prices of all new, domestically produced, final goods and services in an economy.",  y="Percent Change from Preceding Month", x="Dates", title="GDP Price Deflator" ) 
+    scale_y_continuous( breaks=scales::breaks_extended(8), 
+                        labels=scales::label_percent() ) +
+    labs( y="Percent", x="Dates", title="Inflation Rate",
+          subtitle="Red: CPI, Blue: PPI" ) 
   return(p1) 
 }
 
+chart.CPI.Price <- function(inflation=consumer.price.inflation()){
+  
+  p1 <-
+    inflation %>% 
+    ggplot( aes(x=date) ) + 
+    geom_line( aes(y=price)) +
+    scale_x_date( breaks=scales::breaks_width("6 months"), 
+                  labels=scales::label_date_short() ) + 
+    scale_y_continuous( breaks=scales::breaks_extended(8) ) +
+    labs( y="Price", x="Dates", title="Consumer Price Index" ) 
+  return(p1) 
+}
+
+chart.PPI.Price <- function(inflation=producer.price.inflation()){
+  
+  p1 <-
+    inflation %>% 
+    ggplot( aes(x=date) ) + 
+    geom_line( aes(y=price)) +
+    scale_x_date( breaks=scales::breaks_width("6 months"), 
+                  labels=scales::label_date_short() ) + 
+    scale_y_continuous( breaks=scales::breaks_extended(8) ) +
+    labs( y="Price", x="Dates", title="Producer Price Index" ) 
+  return(p1) 
+}
+
+chart.Inflation.Price <- function(inflation=market.inflation()){
+  p1 <-
+    inflation %>% 
+    ggplot( aes(x=date) ) + 
+    geom_line( aes(y=cpi.inflation-lag(cpi.inflation)), colour="red" ) +
+    geom_line( aes(y=ppi.inflation-lag(ppi.inflation)), colour="blue" ) + 
+    scale_x_date( breaks=scales::breaks_width("6 months"), 
+                  labels=scales::label_date_short() ) + 
+    scale_y_continuous( breaks=scales::breaks_extended(8) ) +
+    labs( y="Price", x="Dates", title="CPI & PPI Price",
+          subtitle="Red: CPI, Blue: PPI" ) 
+  return(p1) 
+}
 chart.Indicator1 <- function( fromD="2010-01-01"){
   p1 <-
     ggarrange(  chart.TSI(fromD), 
@@ -296,3 +358,32 @@ chart.Indicator1 <- function( fromD="2010-01-01"){
                 chart.PMI(fromD), nrow=4, ncol=1, align=c("v") ) 
   return(p1) 
 }
+
+chart.Gold.Price <- function( goldPrice = gold.price.per.troy.ounce() ){
+  gold.chart <- 
+    goldPrice %>% 
+    ggplot( aes(x=date ) ) + 
+    geom_line( aes(y=price) ) +  
+    scale_x_date( breaks=scales::breaks_width("6 months"), 
+                  labels=scales::label_date_short() ) + 
+    scale_y_continuous( breaks=scales::breaks_extended(8), 
+                        labels=scales::label_dollar() ) +
+    labs( y="USD per troy Ounce", x="Dates", title="Gold Price" ) 
+  return(gold.chart )
+}
+
+chart.SP500.Log <- function(){
+  p1 <- 
+    yahoo.Stock.Prices(c("SPY")) %>% 
+    ggplot( aes(x=date ) )+ 
+    geom_line( aes(y=log(close)) ) + 
+    scale_x_date( breaks=scales::breaks_width("6 months"), 
+                  labels=scales::label_date_short() ) + 
+    scale_y_continuous( breaks=scales::breaks_extended(8) ) +
+    labs( y="Close", x="Dates", title="SP500 Log" ) 
+
+  return(p1) 
+
+}
+
+

@@ -9,17 +9,6 @@ removeNACol <- function( tbbl ) {
   return(rColTable)
 }
 
-#fetchTable <- function ( htmlSession ) {
-#  webTable <- 
-#    htmlSession %>% 
-#    read_html() %>% 
-#    html_nodes( "table" ) %>% 
-#    html_table(header = TRUE, fill = TRUE, trim=TRUE) %>% 
-#    map(., ~ as_tibble(., .name_repair="unique" ) ) %>%
-#    map( ., ~ select_if( .x, ~sum(!is.na(.)) > 0 ) ) 
-#  return( webTable )
-#}
-
 fetchTable <- function ( htmlSession ) {
   webTable <- 
     htmlSession %>% 

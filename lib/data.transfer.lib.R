@@ -1,7 +1,9 @@
 library( tidyverse ) 
 library( tidyquant ) 
 library(timetk) 
+library(rvest)
 source("var/variables.R")
+
 
 av_api_key("46JTYXHNWNEYZ90I")
 quandl_api_key("xdVQSGYi75oJgntnQbSx") 
@@ -109,7 +111,7 @@ alphavantage.Stock.Prices.Daily <- function( stock.list, ... ){
            av_fun = "TIME_SERIES_DAILY", 
            complete_cases = TRUE, 
            ... ) %>% 
-    mutate( symbol="W5000" ) %>% 
+    mutate( symbol22="W5000" ) %>% 
     rename( date=timestamp ) 
     return( interval.stock.prices ) 
 }

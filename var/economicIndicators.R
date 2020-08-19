@@ -143,3 +143,36 @@ inventory.Sale.Ratio <- function( fromDate='2010-01-01', toDate=Sys.Date() ) {
   return( isr )
 }
 
+tsa.Screening <- function(tsaURL="https://www.tsa.gov/coronavirus/passenger-throughput" ){
+  values <- 
+    tsaURL %>% 
+    html_session() %>% 
+    html_node("table") %>% 
+    html_table(fill=TRUE, trim=TRUE, header=TRUE ) %>% 
+    as_tibble() %>% 
+    rename_all( tolower ) %>% 
+    mutate( date = mdy(date) ) 
+
+
+  names( values ) <- c("date", "travelers", "old" )
+
+  oldTravelers <- 
+    values %>% 
+    transmute( date = date - years(1), travelers = old  ) %>% 
+    mutate( travelers = str_replace_all(travelers, ",", "" ) ) %>% 
+    mutate( travelers = as.numeric( travelers ) ) %>% 
+    drop_na() 
+
+  travelers <- 
+    values %>% 
+    select( date, travelers ) %>% 
+    drop_na() %>% 
+    mutate( travelers = str_replace_all(travelers, ",", "" ) ) %>% 
+    mutate( travelers = as.numeric( travelers ) ) %>% 
+    arrange( by=date ) %>% 
+    mutate( annual.change = (travelers-oldTravelers$travelers)/oldTravelers$travelers ) 
+
+  return( travelers ) 
+#tsa.Screening() %>% filter( date >= (Sys.Date()-days(30) ) ) %>% mutate(
+  #change = (travelers-lag( travelers ))/lag(travelers) ) %>% View()
+}

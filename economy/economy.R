@@ -1,5 +1,6 @@
 source("data.transfer.lib.R") 
 source("var/economicIndicators.R")
+source("var/variables.R") 
 library( broom )
 library(lubridate)
 
@@ -8,6 +9,8 @@ library(lubridate)
 
 PASSENGER.CAR.REGISTRATIONS <- 
   "USASLRTCR03MLSAM" 
+GOLD.PRICE <- 
+  "GOLDAMGBD228NLBM" 
 
 GOV.SECURITIES <- 
     c("4WEEK"="DTB4WK", 
@@ -54,67 +57,6 @@ yieldCurve.Data <- function( fromDate='2010-01-01', toDate=Sys.Date() ){
   return( securities ) 
 }
 
-inflation <- function( indicators ){
-  inflation <-
-    indicators %>% 
-    #filter( symbol == "CPIAUCSL" ) %>% 
-    mutate( rate = ( price - lag(price))/lag(price)*100 ) %>% 
-    mutate( symbol = "inflation.ROC" ) %>% 
-    select( symbol, date, rate )
-  return( inflation ) 
-}
-
-inflation2 <- function(){
-  inflation <- 
-    GOV.SECURITIES[c("5YEAR", "5YEARTIPS")] %>% 
-    unname %>% 
-    fred.Data() %>% 
-    group_by(symbol) %>% 
-    pivot_wider( names_from=symbol, values_from=price ) %>% 
-    rename( nominal=DGS5, real=DFII5 ) %>% 
-    mutate( inflation.rate = ( 1 + (nominal*0.01))/(1 + (real*0.01) ) -1 )  
-
-  return( inflation ) 
-}
-
-wholesale.Inflation <- function( indicators ){
-  inflation <-
-    indicators %>% 
-    #filter( symbol == "CPIAUCSL" ) %>% 
-    mutate( rate = ( price - lag(price))/lag(price)*100 ) %>% 
-    mutate( symbol = "wholesale.inflation" ) %>% 
-    select( symbol, date, rate )
-  return( inflation ) 
-}
-
-annualInflation <- function( indicators=inflation.Rates(fromDate), fromDate=ymd("2015-01-01") ){
-  annualInflation <- 
-    indicators %>% 
-    drop_na() %>% 
-    ungroup() %>% 
-    group_by( year=year(date) ) %>% 
-    filter( date==min(date)|date==max(date) ) %>% 
-    select( -rate ) %>% 
-    pivot_wider(names_from=symbol, values_from=price) %>% 
-    summarise_at( c("cpi", "ppi"), diff ) %>% 
-    rename( cpi.inflation=cpi, ppi.inflation=ppi )
-
-  return( annualInflation ) 
-}
-
-purchasingPower <- function( indicators=inflation.Rates(fromDate), fromDate=ymd("2015-01-01") ){
-  purchasePower <- 
-    indicators %>% 
-    group_by( year=year(date) ) %>% 
-    filter( date==min(date)|date==max(date) ) %>% 
-    select( -rate ) %>% 
-    pivot_wider(names_from=symbol, values_from=price) %>% 
-    summarise_at( c("cpi", "ppi"), diff ) %>% 
-    rename( cpi.inflation=cpi, ppi.inflation=ppi )
-
-  return( purchasePower) 
-}
-
 oecdIndicator <- function( indicators ){
   oecd <- 
     indicators %>% 
@@ -124,6 +66,13 @@ oecdIndicator <- function( indicators ){
     mutate( caption="Major Leading Indicators in US Economy" ) 
 
   return(oecd) 
+}
+gold.price.per.troy.ounce <- function(){
+  gold <- 
+    GOLD.PRICE %>% 
+    fred.Data()
+
+  return( gold ) 
 }
 
 unemploymentRate <- function( indicators ) {

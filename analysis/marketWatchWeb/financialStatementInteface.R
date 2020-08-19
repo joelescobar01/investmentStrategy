@@ -51,6 +51,15 @@ balanceSheetQuarter <- function( symbol ){
   return( statement ) 
 }
 
+balanceSheetQuarter2 <- function( symbol=NA ){
+  if( is.na(symbol) )
+    return(NA) 
+  statement <- 
+    symbol %>% 
+    balanceSheetQuarterURL() %>% 
+    financialStatement() 
+  return( statement ) 
+}
 cashFlowYear <- function( symbol ){
   statement <- 
     symbol %>% 
