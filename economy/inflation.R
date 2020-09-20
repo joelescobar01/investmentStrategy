@@ -12,6 +12,12 @@ inflation <- function( indicators ){
   return( inflation ) 
 }
 
+inflation.Returns <- function( stockReturn, inflationRate ){
+  inflationReturn <-
+    (stockReturn+1)/(inflationRate+1) 
+  return( inflationReturn-1 )
+}
+
 treasury.inflation.rate <- function(){
   inflation <- 
     GOV.SECURITIES[c("5YEAR", "5YEARTIPS")] %>% 
@@ -88,5 +94,3 @@ purchasingPower <- function( indicators=inflation.Rates(fromDate), fromDate=ymd(
 
   return( purchasePower) 
 }
-
-

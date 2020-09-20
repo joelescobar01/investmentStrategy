@@ -15,15 +15,43 @@ financialStatement <- function( mwURL ){
     removeDashes() %>% 
     removePercentage() %>% 
     convertFinanceFormat() %>% 
-    cleanTable()
+    cleanTable() %>% 
+    select_if( ~ !is.numeric(.) || sum(.) != 0 )
   return(docu)
+}
+
+financialStatementSeperated <- function( mwURL ){
+  docu <- 
+    mwURL %>% 
+    createHTMLSession() %>% 
+    fetchTable() %>% 
+    map( ~ rename(.x, defaultName=names(.)[1] ) %>%  
+          select_if( ~sum(!is.na(.)) > 0 ) %>%  
+          reshapeTable() %>% 
+          removeDashes() %>% 
+          removePercentage() %>% 
+          convertFinanceFormat() %>% 
+          cleanTable() %>% 
+          select_if( ~ !is.numeric(.) || sum(.) != 0  ) )
+    names(docu) <- 
+      c("current.assets", "fixed.assets", "liabilities.shareholders.equity" )
+  return(docu)
+}
+
+
+transposeFinancialStatement <- function( statement ){
+  tranpo <- 
+    statement %>% 
+    pivot_longer( -period, names_to="item", values_to="usd") %>% 
+    pivot_wider( names_from="period", values_from="usd") 
+  return(tranpo ) 
 }
 
 incomeStatementYear <- function( symbol ){
   statement <- 
     symbol %>% 
     incomeStatementURL() %>% 
-    financialStatement() 
+    financialStatement()  
   return( statement ) 
 }
 

@@ -4,24 +4,6 @@ source("analysis/marketWatchWeb/financialStatementInteface.R")
 #) %>% pull() %>% sp500Companies() %>% companyValuation() %>% pmap( ~ mutate(
 #..1, company=..2) %>% select( company, everything() ) ) 
 
-requiredColumns <- c( "company", "period", "salesrevenue",
-                      "net.income", "total.assets",
-                      "net.goodwill", "net.other.intangibles", 
-                      "Total_Current_Liabilities", "Total_Current_Assets", 
-                      "Total_Equity", "Depreciation_Amortization_Expense", 
-                      "Gross_Income", "Non_Operating_IncomeExpense",
-                      "Basic_Shares_Outstanding", "Diluted_Shares_Outstanding", 
-                      "Cash_Short_Term_Investments", "Inventories",
-                      "Total_Current_Assets", "Intangible_Assets", 
-                      "Net_Goodwill", "ST_Debt_Current_Portion_LT_Debt",
-                      "Net_Property_Plant_Equipment", "Total_Investments_and_Advances",
-                      "Short_Term_Debt", "Total_Current_Liabilities", 
-                      "LongTerm_Debt", "Total_Liabilities", 
-                      "Preferred_Stock_Carrying_Value", "Total_Equity", 
-                      "Capital_Expenditures", "Capital_Expenditures_Fixed_Assets", 
-                      "Cash_Dividends_Paid_Total", "Common_Dividends",
-                      "Change_in_Current_Debt", "Change_in_LongTerm_Debt" ) 
-
 companyFinancialDocumentsYearly <- function( company ){
   incomeS <- 
     company %>% 
@@ -50,6 +32,17 @@ companyFinancialDocumentsQuaterly <- function( company ){
 
   return( companyStatement )
 }
+
+
+companyRatios <- function(companies){
+  indexRat <- 
+    companies %>% 
+    select( symbol ) %>% 
+    map_dfr( ~ .x %>% get.Financial.Ratios() ) %>% 
+    rename_all( tolower )
+  return( indexRat ) 
+}
+
 
 
 dividendToPriceRatio <- function( sp500Companies ){

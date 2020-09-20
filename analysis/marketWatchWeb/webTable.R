@@ -30,8 +30,11 @@ combineTables <- function( webTable ){
 reshapeTable <- function( dCol ) {
   rTable <- 
     dCol %>% 
-    mutate_at( vars("defaultName"), ~ str_replace_all(., "[:punct:]", "" ) %>% 
-                                      str_replace_all( "[:blank:]+", "." )
+    mutate_at( vars("defaultName"), ~  
+              str_replace_all( ., "/", " " ) %>%
+              str_replace_all( "&", "" ) %>% 
+              str_replace_all( "[:punct:]", "" ) %>% 
+              str_replace_all( "[:blank:]+", "." )
               ) %>% 
     pivot_longer( -defaultName, names_to="period", values_to="values" ) %>% 
     pivot_wider( names_from=defaultName, values_from="values", values_fn=list ) 
