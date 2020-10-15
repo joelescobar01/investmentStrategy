@@ -20,6 +20,34 @@ financialStatement <- function( mwURL ){
   return(docu)
 }
 
+financialStatement2 <- function( mwURL ){
+  docu <- 
+    mwURL %>% 
+    createHTMLSession() %>% 
+    fetchTable2() %>% 
+    combineTables() %>% 
+    removeDashes("defaultName") %>% 
+    removePercentage("defaultName") %>% 
+    convertFinanceFormat("defaultName") %>%
+    cleanRowItem() %>% 
+    cleanTable2("defaultName")  
+  return(docu)
+}
+
+financialStatementRatioLess <- function( mwURL) {
+  docu <-
+    mwURL %>% 
+    createHTMLSession() %>% 
+    fetchTable2() %>% 
+    combineTables2() %>% 
+    replaceDashes("defaultName") %>% 
+    removePercentage("defaultName") %>% 
+    convertFinanceFormat2("defaultName") %>% 
+    cleanRowItem() %>% 
+    removeRatios
+  return( docu ) 
+}
+
 financialStatementSeperated <- function( mwURL ){
   docu <- 
     mwURL %>% 
@@ -38,6 +66,17 @@ financialStatementSeperated <- function( mwURL ){
   return(docu)
 }
 
+fullyCleanTable <- function( fTable ){ 
+  cTable <- 
+    fTable %>% 
+    reshapeTable() %>% 
+    removeDashes() %>% 
+    removePercentage() %>% 
+    convertFinanceFormat() %>% 
+    cleanTable() %>% 
+    select_if( ~ !is.numeric(.) || sum(.) != 0 )
+  return( cTable )
+}
 
 transposeFinancialStatement <- function( statement ){
   tranpo <- 
@@ -45,83 +84,6 @@ transposeFinancialStatement <- function( statement ){
     pivot_longer( -period, names_to="item", values_to="usd") %>% 
     pivot_wider( names_from="period", values_from="usd") 
   return(tranpo ) 
-}
-
-incomeStatementYear <- function( symbol ){
-  statement <- 
-    symbol %>% 
-    incomeStatementURL() %>% 
-    financialStatement()  
-  return( statement ) 
-}
-
-incomeStatementQuarter <- function( symbol ){
-  statement <- 
-    symbol %>% 
-    incomeStatementQuarterURL() %>% 
-    financialStatement() 
-  return( statement ) 
-}
-
-balanceSheetYear <- function( symbol ){
-  statement <- 
-    symbol %>% 
-    balanceSheetURL() %>% 
-    financialStatement() 
-  return( statement ) 
-}
-
-balanceSheetQuarter <- function( symbol ){
-  statement <- 
-    symbol %>% 
-    balanceSheetQuarterURL() %>% 
-    financialStatement() 
-  return( statement ) 
-}
-
-balanceSheetQuarter2 <- function( symbol=NA ){
-  if( is.na(symbol) )
-    return(NA) 
-  statement <- 
-    symbol %>% 
-    balanceSheetQuarterURL() %>% 
-    financialStatement() 
-  return( statement ) 
-}
-cashFlowYear <- function( symbol ){
-  statement <- 
-    symbol %>% 
-    cashFlowURL() %>% 
-    financialStatement() 
-  return( statement ) 
-}
-
-cashFlowQuarter <- function( symbol ){
-  statement <- 
-    symbol %>% 
-    cashFlowQuarterURL() %>% 
-    financialStatement() 
-  return( statement ) 
-}
-
-companyFinancialDocumentsYearly <- function( company ){
-  incomeS <- 
-    company %>% 
-    incomeStatementYear()
-  balanceS <- 
-    company %>% 
-    balanceSheetYear()   
-  cashFlowS <- 
-    company %>% 
-    cashFlowYear()
-
- document <- 
-   list(  company = company, 
-          income.statement = incomeS,
-          balance.sheet = balanceS, 
-          cash.flow = cashFlowS ) 
-
-  return( document )
 }
 
 

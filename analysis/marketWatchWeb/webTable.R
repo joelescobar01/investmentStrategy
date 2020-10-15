@@ -18,6 +18,18 @@ fetchTable <- function ( htmlSession ) {
     map(., ~ as_tibble(., .name_repair="unique" ) ) 
   return( webTable )
 }
+
+fetchTable2 <- function ( htmlSession ) {
+  webTable <- 
+    htmlSession %>% 
+    read_html() %>% 
+    html_nodes( "table" ) %>% 
+    html_table(header = TRUE, fill = TRUE, trim=TRUE) %>% 
+    map(., ~ as_tibble(., .name_repair="unique" ) %>% 
+          select_if( ~!all(is.na(.)))) #delete all NA columns   
+  return( webTable )
+}
+
 combineTables <- function( webTable ){
   dCol <- 
     webTable %>% 
@@ -26,6 +38,15 @@ combineTables <- function( webTable ){
     select_if( ~sum(!is.na(.)) > 0 ) 
   return(dCol) 
 }
+
+combineTables2 <- function( webTable ){
+  dCol <- 
+    webTable %>% 
+    map( ~ rename(.x, defaultName=names(.)[1] ) ) %>% 
+    reduce(bind_rows)  
+  return(dCol) 
+}
+
 
 reshapeTable <- function( dCol ) {
   rTable <- 
@@ -41,6 +62,22 @@ reshapeTable <- function( dCol ) {
   return(rTable ) 
 }
 
+tidyTable <- function( dCol ) {
+  rTable <- 
+    dCol %>% 
+    pivot_longer( -defaultName, names_to="period", values_to="values" ) %>% 
+    pivot_wider( names_from=defaultName, values_from="values" ) 
+  return(rTable ) 
+}
+
+excelFormatTable <- function( dCol ) {
+  rTable <- 
+    dCol %>% 
+    pivot_longer( -period, names_to="item", values_to="values" ) %>% 
+    pivot_wider( names_from=period, values_from=values ) 
+  return(rTable ) 
+}
+
 removeDashes <- function( rTable, cName="period" ) {
   dTable <- 
     rTable %>%
@@ -48,29 +85,75 @@ removeDashes <- function( rTable, cName="period" ) {
   return(dTable ) 
 }
 
-removePercentage <- function( dTable ) {
+replaceDashes <- function( rTable, cName="period" ) {
+  dTable <- 
+    rTable %>%
+    mutate_at( vars(-cName), ~ str_replace_all( ., "-", "0O" ) ) 
+  return(dTable ) 
+}
+
+removePercentage <- function( dTable, cName="period" ) {
   pTable <- 
     dTable %>% 
-    mutate_at( vars(-"period"), ~ str_replace_all( ., "%", NA_character_ ) )
+    mutate_at( vars(-cName ), ~ str_replace_all( ., "%", NA_character_ ) )
   return(pTable) 
 }
 
-convertFinanceFormat <- function( pTable ) {
+convertFinanceFormat <- function( pTable, cName="period" ) {
   fFormat <- 
     pTable %>% 
-    mutate_at( vars(-"period"), ~ str_replace_all( .,"(\\()(.*)(\\))", "-\\2" ) ) %>% 
-    mutate_at( vars(-"period"), ~ numerateChar(.)) 
+    mutate_at( vars(-cName), ~ str_replace_all( .,"(\\()(.*)(\\))", "-\\2" ) ) %>% 
+    mutate_at( vars(-cName), ~ numerateChar(.)) %>% 
+    mutate_at( vars(-cName), replace_na, 0 ) 
   return(fFormat )
 }
 
-cleanTable <- function( fFormat ){
+convertFinanceFormat2 <- function( pTable, cName="period" ) {
+  fFormat <- 
+    pTable %>% 
+    mutate_at( vars(-cName), ~ str_replace_all( .,"(\\()(.*)(\\))", "-\\2" ) ) %>% 
+    mutate_at( vars(-cName), ~ numerateChar(.)) 
+  return(fFormat )
+}
+
+
+cleanRowItem <- function( dCol, cName="defaultName" ) {
+  rTable <- 
+    dCol %>% 
+    mutate_at( vars(cName), ~  
+              str_replace_all( ., "/", " " ) %>%
+              str_replace_all( "&", "" ) %>% 
+              str_replace_all( "[:punct:]", "" ) %>% 
+              str_replace_all( "[:blank:]+", "." ) %>% 
+              tolower()
+              ) 
+  return(rTable ) 
+}
+
+removeRatios <- function( fFormat ){
   eCol <- 
     fFormat %>% 
-    mutate_at( vars(-"period"), replace_na, 0 ) %>% 
+    filter_if( is.numeric, all_vars(!is.na(.)))
+  return(eCol)
+}
+
+cleanTable <- function( fFormat, cName="period" ){
+  eCol <- 
+    fFormat %>% 
+    mutate_at( vars(-cName), replace_na, 0 ) %>% 
     rename_all( tolower )
 
   return(eCol)
 }
+
+cleanTable2 <- function( fFormat, cName="period" ){
+  eCol <- 
+    fFormat %>% 
+    mutate_at( vars(-cName), replace_na, 0 ) %>% 
+    filter_if( is.numeric, any_vars(!. == 0 ) )
+  return(eCol)
+}
+
 
 
 numericalIndicator <- c(  "O" = 10^(0),

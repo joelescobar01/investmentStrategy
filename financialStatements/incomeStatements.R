@@ -1,4 +1,13 @@
+source('data.transfer.lib.R')
 source("analysis/marketWatchWeb/financialStatementInteface.R")
+
+#incomeStatementURL("AAPL") %>% createHTMLSession() %>% fetchTable2() %>%
+#combineTables() %>% removeDashes("defaultName") %>%
+#removePercentage("defaultName") %>% convertFinanceFormat("defaultName") %>%
+#cleanRowItem() %>% cleanTable2("defaultName") %>% 
+#mutate_at( vars(-"defaultName"), ~ ./first(..1) )
+
+incomeStatementCommonSize <
 
 commonSizeStatement <- function( incomeStatement ) {
   commonSize <- 
@@ -6,6 +15,14 @@ commonSizeStatement <- function( incomeStatement ) {
     mutate( across( where( is.numeric ), ~ .x / sales.revenue ) )  
   return( commonSize ) 
 }
+
+commonSizeStatement2 <- function( incomeStatement ) {
+  commonSize <- 
+    incomeStatement %>% 
+    mutate_at( vars(-"defaultName"), ~ ./first(..1) )
+  return( commonSize ) 
+}
+
 
 trendStatement <- function( incomeStatement ) {
   trend <- 
@@ -15,16 +32,25 @@ trendStatement <- function( incomeStatement ) {
   return(trend)
 }
 
-adjustedPretax <- function( incomeStatement ){
-  pretax <- 
+assetTrendStatement2 <- function( incomeStatement ) {
+  trend <- 
     incomeStatement %>% 
-    mutate( adjusted.pretax.income = 
-           pretax.income - 
-           nonoperating.interest.income - 
-           non.operating.incomeexpense - 
-           unusual.expense ) %>% 
-    select( period, pretax.income, adjusted.pretax.income ) %>% 
-    mutate( diff.pretax.income = pretax.income - adjusted.pretax.income ) %>% 
-    mutate( diff.percent = diff.pretax.income / adjusted.pretax.income ) 
-  return( pretax ) 
+    mutate( index = .[[2]] ) %>% 
+    mutate_if( is.numeric, ~ .x/index ) %>% 
+    select( -index )
+    
+    return(trend)
 }
+
+
+#incomeStatementURL("AAPL") %>% createHTMLSession() %>% fetchTable2() %>%
+#combineTables() %>% removeDashes("defaultName") %>%
+#removePercentage("defaultName") %>% convertFinanceFormat("defaultName") %>%
+#cleanRowItem() %>% cleanTable2("defaultName") %>% trendStatement2()
+
+
+#balanceSheetURL("AAPL") %>% createHTMLSession() %>% fetchTable2() %>% first(2)
+#%>% map( ~ .x %>% rename( "defaultName" = 1 ) ) %>% reduce( bind_rows ) %>%
+#removeDashes("defaultName") %>% removePercentage("defau
+#ltName") %>% convertFinanceFormat("defaultName") %>% cleanRowItem() %>%
+#cleanTable2("defaultName")
