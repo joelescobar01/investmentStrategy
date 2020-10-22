@@ -48,6 +48,36 @@ financialStatementRatioLess <- function( mwURL) {
   return( docu ) 
 }
 
+financialStatementCashFlow  <- function( mwURL ){
+  docu <- 
+    mwURL %>% 
+    createHTMLSession() %>% 
+    fetchTable() %>% 
+    map( ~ rename(.x, defaultName=names(.)[1] ) %>%  
+          select_if( ~sum(!is.na(.)) > 0 ) %>%  
+          reshapeTable() %>% 
+          removeDashes() %>% 
+          removePercentage() %>% 
+          convertFinanceFormat() %>% 
+          cleanTable() %>% 
+          select_if( ~ !is.numeric(.) || sum(.) != 0  ) )
+  
+  statement <- 
+    docu[[1]] %>% 
+    rename_at( vars(-period), ~ paste0( .x, ".operating.activities") ) 
+  statement <- 
+    docu[[2]] %>% 
+    rename_at( vars(-period), ~ paste0( .x, ".investing.activities") ) %>% 
+    right_join( statement, by='period') 
+  statement <- 
+    docu[[3]] %>% 
+    rename_at( vars(-period), ~ paste0( .x, ".financing.activities") ) %>% 
+    right_join( statement, by='period' ) 
+
+  return( statement )
+}
+
+
 financialStatementSeperated <- function( mwURL ){
   docu <- 
     mwURL %>% 

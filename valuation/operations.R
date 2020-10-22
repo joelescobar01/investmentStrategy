@@ -1,58 +1,5 @@
 source("analysis/marketWatchWeb/financialStatementInteface.R")
 
-benchmarkProxy <- function(sector_=NA){
-  if( is.na(sector_) )
-    return() 
-  benchmark <- 
-    tq_index("SP500") %>% 
-    filter( sector == sector_ ) 
-  return(benchmark) 
-}
-
-benchmarkWorkingCapital <- function(){
-  benchmark <- 
-    tq_index("SP500") %>% 
-    filter( sector == "Utilities") %>% 
-    select( symbol ) %>% 
-    pull() %>% 
-    map_dfr( ~ workingCapital(.x) ) %>% 
-    select( period, symbol, everything() ) 
-  return( benchmark ) 
-}
-
-benchmarkOPEX <- function(){
-  benchmark <- 
-    tq_index("SP500") %>% 
-    filter( sector == "Utilities") %>% 
-    select( symbol ) %>% 
-    pull() %>% 
-    map_dfr( ~ operatingExpense(.x) ) %>% 
-    select( period, symbol, everything() ) 
-  return( benchmark ) 
-}
-
-benchmarkCAPEX <- function(){
-  benchmark <- 
-    tq_index("SP500") %>% 
-    filter( sector == "Utilities") %>% 
-    select( symbol ) %>% 
-    pull() %>% 
-    map_dfr( ~ capitalExpense(.x) ) %>% 
-    select( period, symbol, everything() ) 
-  return( benchmark ) 
-}
-
-benchmarkCurrentPosition <- function(){
-  benchmark <- 
-    tq_index("SP500") %>% 
-    filter( sector == "Utilities") %>% 
-    select( symbol ) %>% 
-    pull() %>% 
-    map_dfr( ~ currentPosition(.x) ) %>% 
-    select( period, symbol, revenue, everything() ) 
-  return( benchmark ) 
-}
-
 
 workingCapital <- function( ticker ){
   wc <- 

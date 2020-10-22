@@ -70,13 +70,22 @@ tidyTable <- function( dCol ) {
   return(rTable ) 
 }
 
-excelFormatTable <- function( dCol ) {
+excelFormatTable <- function( dCol, outputColumn="item" ) {
   rTable <- 
     dCol %>% 
-    pivot_longer( -period, names_to="item", values_to="values" ) %>% 
+    pivot_longer( -period, names_to=outputColumn, values_to="values" ) %>% 
     pivot_wider( names_from=period, values_from=values ) 
   return(rTable ) 
 }
+
+excelFormatTable2 <- function( dCol ) {
+  rTable <- 
+    dCol %>% 
+    pivot_longer( -period, names_to="defaultName", values_to="values" ) %>% 
+    pivot_wider( names_from=period, values_from=values ) 
+  return(rTable ) 
+}
+
 
 removeDashes <- function( rTable, cName="period" ) {
   dTable <- 

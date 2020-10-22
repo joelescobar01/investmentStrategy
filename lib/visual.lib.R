@@ -49,8 +49,21 @@ scale.price.axis <- function(){
   return(sc)
 }
 
+scale.price.xaxis <- function(){
+  sc <- 
+    scale_x_continuous( breaks=scales::breaks_extended(8), labels=scales::label_dollar() )
+  return(sc)
+}
+
+
 scale.percent.axis <- function(){
   sc <- 
     scale_y_continuous( breaks=scales::breaks_extended(16), labels=scales::label_percent() ) 
+  return(sc)
+}
+
+scale.percent.xaxis <- function(){
+  sc <- 
+    scale_x_continuous( breaks=scales::breaks_extended(8), labels=scales::label_percent(  )  ) 
   return(sc)
 }
