@@ -1,17 +1,43 @@
 source('data.transfer.lib.R')
 source("analysis/marketWatchWeb/financialStatementInteface.R")
 
+getTable <- function( statementURL  ){
+  tabl <- 
+    tryCatch( 
+      statementURL %>% 
+      createHTMLSession() %>% 
+      fetchTable2() %>%
+      combineTables() %>% 
+      removeDashes("defaultName") %>%
+      removePercentage("defaultName") %>% 
+      convertFinanceFormat("defaultName") %>%
+      cleanRowItem() %>% 
+      cleanTable2("defaultName") %>% 
+      rename_at( -1 ,~ c("year1", "year2", "year3", "year4", "year5" )  ) %>% 
+      mutate_if( is.numeric, ~ na_if(.x, 0 ) ), error=function(err) NA ) 
+  return( tabl ) 
+}
+
+getTable2 <- function( statementURL  ){
+  tabl <- 
+    tryCatch( 
+      statementURL %>% 
+      createHTMLSession() %>% 
+      fetchTable2() %>%
+      combineTables() %>% 
+      removeDashes("defaultName") %>%
+      removePercentage("defaultName") %>% 
+      convertFinanceFormat("defaultName") %>%
+      cleanRowItem() %>% 
+      cleanTable2("defaultName") %>% 
+      mutate_if( is.numeric, ~ na_if(.x, 0 ) ), error=function(err) NA ) 
+  return( tabl ) 
+}
+
 commonSizeIncomeStatementTable <- function( symbol ){
  commonSize <- 
   incomeStatementURL(symbol) %>% 
-  createHTMLSession() %>% 
-  fetchTable2() %>%
-  combineTables() %>% 
-  removeDashes("defaultName") %>%
-  removePercentage("defaultName") %>% 
-  convertFinanceFormat("defaultName") %>%
-  cleanRowItem() %>% 
-  cleanTable2("defaultName") %>%
+  getTable() %>%
   mutate_at( vars(-"defaultName"), ~ ./first(..1) ) %>% 
   rename( income.statement = "defaultName") 
   return( commonSize ) 
@@ -20,14 +46,7 @@ commonSizeIncomeStatementTable <- function( symbol ){
 trendIncomeStatementTable <- function( symbol ) {
   trendTable <- 
     incomeStatementURL(symbol) %>% 
-    createHTMLSession() %>% 
-    fetchTable2() %>% 
-    combineTables() %>% 
-    removeDashes("defaultName") %>% 
-    removePercentage("defaultName") %>% 
-    convertFinanceFormat("defaultName") %>%
-    cleanRowItem() %>% 
-    cleanTable2("defaultName") %>% 
+    getTable() %>% 
     mutate( index = .[[2]] ) %>% 
     mutate_if( is.numeric, ~ .x/index ) %>% 
     rename( income.statement = "defaultName") %>% 
@@ -124,14 +143,7 @@ trendCashFlowTable <- function( symbol ) {
 
   trendTable <- 
     cashFlowURL(symbol) %>% 
-    createHTMLSession() %>% 
-    fetchTable2() %>% 
-    combineTables() %>%
-    removeDashes("defaultName") %>% 
-    removePercentage("defaultName") %>% 
-    convertFinanceFormat("defaultName") %>% 
-    cleanRowItem() %>% 
-    cleanTable2("defaultName") %>%  
+    getTable() %>%  
     mutate( index=.[[2]] ) %>% 
     mutate_if( is.numeric, ~ .x/index ) %>% 
     select( -index )

@@ -5,6 +5,20 @@ source('visual.lib.R')
 source("analysis/marketWatchWeb/webTable.R")
 source("analysis/marketWatchWeb/marketWatchHTTP.R")
 
+wikiSP500URL <- "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies" 
+
+wikiSP500 <-
+  wikiSP500URL %>% 
+  createHTMLSession() %>% 
+  fetchTable2() %>% 
+  first %>% 
+  flatten_dfr() %>% 
+  rename_all( ~ str_replace_all(., "\\s+|-", "." ) %>% tolower  ) %>% 
+  rename( company = security ) %>% 
+  rename_at( vars( starts_with("gics.")), ~ str_replace_all(., "gics.", ""))
+
+
+
 financialStatement <- function( mwURL ){
   docu <- 
     mwURL %>% 
@@ -12,7 +26,7 @@ financialStatement <- function( mwURL ){
     fetchTable() %>% 
     combineTables() %>% 
     reshapeTable() %>% 
-    removeDashes() %>% 
+    replaceDashes() %>% 
     removePercentage() %>% 
     convertFinanceFormat() %>% 
     cleanTable() %>% 
@@ -45,6 +59,21 @@ financialStatementRatioLess <- function( mwURL) {
     convertFinanceFormat2("defaultName") %>% 
     cleanRowItem() %>% 
     removeRatios
+  return( docu ) 
+}
+
+financialStatementRatioLess2 <- function( mwURL) {
+  docu <-
+    mwURL %>% 
+    createHTMLSession() %>% 
+    fetchTable2() %>% 
+    combineTables2() %>% 
+    replaceDashes("defaultName") %>% 
+    removePercentage("defaultName") %>% 
+    convertFinanceFormat2("defaultName") %>% 
+    cleanRowItem() %>% 
+    removeRatios %>% 
+    rename_at( -1 ,~ c("year1", "year2", "year3", "year4", "year5" )  )
   return( docu ) 
 }
 

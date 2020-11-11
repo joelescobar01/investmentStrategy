@@ -22,11 +22,29 @@ totalDebt <- function( symbol ){
   return(debt) 
 }
 
-nonOperatingCashFlow <- function( symbol ) {
-}
+bookValue <- function( symbol ) {
+  print( symbol ) 
+  income <- 
+    incomeStatementURL(symbol) %>% 
+    financialStatementRatioLess() %>% 
+    tidyTable() %>%
+    transmute( period, 
+                net.income.available.to.common, 
+                diluted.shares.outstanding ) 
+  balance <- 
+    balanceSheetURL(symbol) %>% 
+    financialStatementRatioLess() %>% 
+    tidyTable() %>% 
+    transmute( period, 
+                total.shareholders.equity ) 
 
-long_term_solvency <- function( symbol ){
+  bookValue <- 
+    left_join( income, balance, by="period") %>%
+    mutate( book.value.per.share = total.shareholders.equity / diluted.shares.outstanding,
+            earnings.per.share = net.income.available.to.common / diluted.shares.outstanding 
+           ) 
 
+  return( bookValue )
 }
 
 investedCapital <- function( symbol ){
@@ -34,6 +52,7 @@ investedCapital <- function( symbol ){
 }
 
 longTermSolvency <- function( symbol ) {
+  print( symbol ) 
   income <- 
     incomeStatementURL(symbol) %>% 
     financialStatementRatioLess() %>% 
@@ -44,6 +63,12 @@ longTermSolvency <- function( symbol ) {
                 operating.income =  gross.income - 
                                     sga.expense - 
                                     other.operating.expense, 
+                effective.tax.rate = income.tax/pretax.income,
+                cost.of.debt.post.tax = interest.expense*(1-effective.tax.rate ), 
+                operating.income.post.tax = operating.income*(1-effective.tax.rate), 
+                interest.to.operating.income.post.tax = cost.of.debt.post.tax/operating.income.post.tax, 
+                operations.to.sales = operating.income / sales.revenue , 
+                 
                 interest.expense ) 
 
   balance <- 
@@ -66,15 +91,18 @@ longTermSolvency <- function( symbol ) {
     cashFlowURL(symbol) %>%
     financialStatementCashFlow() %>% 
     transmute( period, 
-                net.operating.cash.flow.operating.activities )
- 
+                net.operating.cash.flow.operating.activities, 
+                capital.expenditures.investing.activities, 
+                capital.expenditures.fixed.assets.investing.activities, 
+                net.investing.cash.flow.investing.activities ) 
+
   solvencyTable <- 
     left_join( income, balance, by="period") %>%
     left_join( cashFlow, by="period") %>% 
     mutate( 
            interest.coverage = operating.income / interest.expense, 
-           operating.cash.flow.to.total.liabilities = net.operating.cash.flow.operating.activities / total.liabilities.excluding.deferred.taxes  
-           ) %>%
+           operating.cash.flow.to.total.liabilities = net.operating.cash.flow.operating.activities / total.liabilities.excluding.deferred.taxes, 
+           symbol = symbol ) %>%
     left_join( annualReturn( symbol ), by='period' )  
   return( solvencyTable ) 
 }

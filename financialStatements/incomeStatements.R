@@ -7,8 +7,6 @@ source("analysis/marketWatchWeb/financialStatementInteface.R")
 #cleanRowItem() %>% cleanTable2("defaultName") %>% 
 #mutate_at( vars(-"defaultName"), ~ ./first(..1) )
 
-incomeStatementCommonSize <
-
 commonSizeStatement <- function( incomeStatement ) {
   commonSize <- 
     incomeStatement %>% 
@@ -43,10 +41,17 @@ assetTrendStatement2 <- function( incomeStatement ) {
 }
 
 
-#incomeStatementURL("AAPL") %>% createHTMLSession() %>% fetchTable2() %>%
-#combineTables() %>% removeDashes("defaultName") %>%
-#removePercentage("defaultName") %>% convertFinanceFormat("defaultName") %>%
-#cleanRowItem() %>% cleanTable2("defaultName") %>% trendStatement2()
+test <- 
+  incomeStatementURL("AAPL") %>% 
+  createHTMLSession() %>% 
+  fetchTable2() %>%
+  combineTables() %>% 
+  removeDashes("defaultName") %>%
+  removePercentage("defaultName") %>% 
+  convertFinanceFormat("defaultName") %>%
+  cleanRowItem() %>% 
+  cleanTable2("defaultName") %>% 
+  trendStatement()
 
 
 #balanceSheetURL("AAPL") %>% createHTMLSession() %>% fetchTable2() %>% first(2)

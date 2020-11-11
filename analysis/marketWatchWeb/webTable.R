@@ -26,7 +26,7 @@ fetchTable2 <- function ( htmlSession ) {
     html_nodes( "table" ) %>% 
     html_table(header = TRUE, fill = TRUE, trim=TRUE) %>% 
     map(., ~ as_tibble(., .name_repair="unique" ) %>% 
-          select_if( ~!all(is.na(.)))) #delete all NA columns   
+          select_if( ~!all(is.na(.)))) #delete all NA columns 
   return( webTable )
 }
 
@@ -40,6 +40,8 @@ combineTables <- function( webTable ){
 }
 
 combineTables2 <- function( webTable ){
+  if( length(webTable) == 0 )
+    return(NA) 
   dCol <- 
     webTable %>% 
     map( ~ rename(.x, defaultName=names(.)[1] ) ) %>% 

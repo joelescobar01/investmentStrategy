@@ -1,58 +1,46 @@
 source("analysis/marketWatchWeb/financialStatementInteface.R")
-
+# airlines %>% unnest( cols=c(income.statement) ) %>% select( -sub.industry
+# ) %>% group_by( symbol ) %>% pivot_longer( -c(symbol, defaultName),
+# names_to="period", values_to="values" ) %>% pivot_wider(
+# names_from=defaultName, values_from=values ) %>% transmute( symbol ,period,
+# gross.profit = gross.income / sales.revenue, net.profit = net.income
+# / sales.revenue, ebit = gross.income - sga.expense - other.operating.expense
+# , operating.profit = ebit/sales.revenue )
+#
 profitClass <- function( symbol ) {
   income <- 
     incomeStatementURL(symbol) %>% 
-    financialStatementRatioLess() %>% 
+    financialStatementRatioLess2() %>% 
     tidyTable() %>% 
     transmute( period, 
                 sales.revenue,
                 cogs.excluding.da, 
-                operating.income =  gross.income - 
+                depreciation, 
+                ebit =  gross.income - 
                                     sga.expense - 
                                     other.operating.expense, 
                 effective.tax.rate = income.tax/pretax.income,
-                NOPAT = operating.income*(1-effective.tax.rate) ) 
+                NOPAT = ebit*(1-effective.tax.rate) ) 
 
   balance <- 
     balanceSheetURL(symbol) %>% 
-    financialStatementRatioLess() %>% 
+    financialStatementRatioLess2() %>% 
     tidyTable() %>% 
     transmute(  period, 
                 total.assets,
-                inventories,
-                accounts.payable, 
-                avg.account.payable = ( accounts.payable - lag( accounts.payable )/2 ), 
-                avg.inventory = ( inventories - lag(inventories) )/2, 
+                total.current.liabilities,
                 net.tangible.assets = total.assets - 
                                       intangible.assets - 
                                       net.goodwill - 
                                       net.other.intangibles, 
-                avg.assets = (net.tangible.assets + lag( net.tangible.assets))/2, 
-                current.ratio = total.current.assets / total.current.liabilities , 
-                quick.ratio = (cash.short.term.investments + total.accounts.receivable) / total.current.liabilities,
-                avg.account.receivables = ( total.accounts.receivable + lag( total.accounts.receivable ) )/2 
-                )
-
-  cashFlow <- 
-    cashFlowURL(symbol) %>%
-    financialStatementCashFlow() 
+                capital.employed = net.tangible.assets - total.current.liabilities )
 
   profitTable <- 
     left_join( income, balance, by="period") %>%
-    mutate( operating.profit.margin = NOPAT / sales.revenue, 
-            asset.turnover = sales.revenue / avg.assets, 
-            roa = NOPAT/avg.assets, 
-            account.receivable.turnover = sales.revenue / avg.account.receivables, 
-            days.account.receivable.outstanding =  365 / account.receivable.turnover, 
-            inventory.turnover = cogs.excluding.da / avg.inventory, 
-            days.inventory.held = 365 / inventory.turnover, 
-            inventory.purchased = cogs.excluding.da + inventories - lag( inventories ),
-            account.payable.turnover = inventory.purchased / avg.account.payable, 
-            days.account.payable.outstanding = 365 / account.payable.turnover, 
-            operating.cycle = days.account.receivable.outstanding + days.inventory.held + days.account.payable.outstanding,
-            cash.cycle = days.account.receivable.outstanding + days.inventory.held - days.account.payable.outstanding 
-            ) %>% 
+    transmute( period,  
+              operating.profit.ratio = ebit / sales.revenue, 
+              operating.profit.margin = NOPAT / sales.revenue,
+              return.on.capital.employed = ebit / capital.employed ) %>% 
     excelFormatTable() 
   return( profitTable ) 
 }
